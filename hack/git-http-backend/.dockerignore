@@ -1,0 +1,9 @@
+data/
+
+.gitignore
+README.md
+
+docker-compose.yaml
+Dockerfile
+
+forgejo.conf
