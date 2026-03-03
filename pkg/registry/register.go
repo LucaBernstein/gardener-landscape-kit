@@ -15,6 +15,7 @@ import (
 	"github.com/gardener/gardener-landscape-kit/pkg/apis/config/v1alpha1"
 	"github.com/gardener/gardener-landscape-kit/pkg/components"
 	"github.com/gardener/gardener-landscape-kit/pkg/components/flux"
+	fluxmonitoring "github.com/gardener/gardener-landscape-kit/pkg/components/flux-monitoring"
 	calico "github.com/gardener/gardener-landscape-kit/pkg/components/gardener-extensions/networking-calico"
 	cilium "github.com/gardener/gardener-landscape-kit/pkg/components/gardener-extensions/networking-cilium"
 	gardenlinux "github.com/gardener/gardener-landscape-kit/pkg/components/gardener-extensions/os-gardenlinux"
@@ -38,6 +39,7 @@ import (
 // ComponentList contains all available components.
 var ComponentList = []func() components.Interface{
 	flux.NewComponent,
+	fluxmonitoring.NewComponent,
 	operator.NewComponent,
 	garden.NewComponent,
 	calico.NewComponent,

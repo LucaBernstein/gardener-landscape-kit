@@ -1,0 +1,113 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  labels:
+    app: prometheus
+    name: flux-controllers
+    role: monitoring
+  name: flux-controllers
+  namespace: flux-system
+spec:
+#  additionalScrapeConfigs:
+#    key: prometheus.yaml
+#    name: prometheus-garden-additional-scrape-configs
+#  alerting:
+#    alertmanagers:
+#      - alertRelabelings:
+#          - action: drop
+#            regex: "true"
+#            sourceLabels:
+#              - ignoreAlerts
+#          - action: replace
+#            regex: (.+);(.+)
+#            replacement: https://dashboard.ingress.garden.gardener.cc-one.showroom.apeirora.eu/namespace/garden-$1/shoots/$2
+#            sourceLabels:
+#              - project
+#              - name
+#            targetLabel: dashboard_url
+#          - action: replace
+#            regex: garden;(.+)
+#            replacement: https://dashboard.ingress.garden.gardener.cc-one.showroom.apeirora.eu/namespace/garden/shoots/$1
+#            sourceLabels:
+#              - project
+#              - name
+#            targetLabel: dashboard_url
+#          - action: replace
+#            regex: ;(seed-ha-1)
+#            replacement: https://dashboard.ingress.garden.gardener.cc-one.showroom.apeirora.eu/namespace/garden/shoots/$1
+#            sourceLabels:
+#              - project
+#              - name
+#            targetLabel: dashboard_url
+#        name: alertmanager-garden
+#        port: metrics
+#  arbitraryFSAccessThroughSMs: {}
+  evaluationInterval: 1m
+#  externalLabels:
+#    landscape: landscape-apeirora-one
+#  externalUrl: https://prometheus-garden.ingress.garden.gardener.cc-one.showroom.apeirora.eu
+  image: quay.io/prometheus/prometheus:v3.9.1
+  imagePullPolicy: IfNotPresent
+  podMetadata:
+    labels:
+      networking.gardener.cloud/to-dns: allowed
+      networking.gardener.cloud/to-private-networks: allowed
+      networking.gardener.cloud/to-public-networks: allowed
+      networking.gardener.cloud/to-runtime-apiserver: allowed
+      networking.resources.gardener.cloud/to-all-garden-scrape-targets: allowed
+      networking.resources.gardener.cloud/to-all-istio-ingresses-all-seed-scrape-targets: allowed
+      networking.resources.gardener.cloud/to-extensions-all-garden-scrape-targets: allowed
+      networking.resources.gardener.cloud/to-istio-system-all-seed-scrape-targets: allowed
+      observability.gardener.cloud/app: prometheus-flux-controllers
+  podMonitorNamespaceSelector: {}
+  podMonitorSelector:
+    matchLabels:
+      prometheus: flux-controllers
+  portName: web
+  priorityClassName: gardener-garden-system-100
+  probeNamespaceSelector: {}
+  probeSelector:
+    matchLabels:
+      prometheus: flux-controllers
+  reloadStrategy: HTTP
+  replicas: 2
+  resources:
+    requests:
+      cpu: 300m
+      memory: 1000Mi
+  retention: 10d
+  retentionSize: 5GB
+  ruleNamespaceSelector: {}
+  ruleSelector:
+    matchLabels:
+      prometheus: flux-controllers
+  rules:
+    alert: {}
+  scrapeConfigNamespaceSelector: {}
+  scrapeConfigSelector:
+    matchLabels:
+      prometheus: flux-controllers
+  scrapeInterval: 1m
+  scrapeTimeout: 50s
+  securityContext:
+    runAsUser: 0
+  serviceAccountName: prometheus-flux-controllers
+  serviceMonitorNamespaceSelector: {}
+  serviceMonitorSelector:
+    matchLabels:
+      prometheus: flux-controllers
+  shards: 1
+  storage:
+    volumeClaimTemplate:
+      metadata:
+        name: prometheus-db
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
+      status: {}
+  version: v3.9.1
+  web:
+    maxConnections: 1024
