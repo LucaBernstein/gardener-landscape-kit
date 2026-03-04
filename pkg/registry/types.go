@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/elliotchance/orderedmap/v3"
+	"k8s.io/utils/set"
 
 	"github.com/gardener/gardener-landscape-kit/pkg/components"
 	"github.com/gardener/gardener-landscape-kit/pkg/ocm"
@@ -28,16 +29,51 @@ type Interface interface {
 }
 
 type registry struct {
-	components *orderedmap.OrderedMap[string, components.Interface]
+	components   *orderedmap.OrderedMap[string, components.Interface]
+	dependencies dependencies
+}
+
+type dependencies struct {
+	provided set.Set[string]
+	required set.Set[string]
+}
+
+func (d *dependencies) missing() []string {
+	var missing []string
+	for req := range d.required {
+		if !d.provided.Has(req) {
+			missing = append(missing, req)
+		}
+	}
+	return missing
+}
+
+func (r *registry) validate() error {
+	missing := r.dependencies.missing()
+	if len(missing) > 0 {
+		return fmt.Errorf("missing required dependencies: %s", strings.Join(missing, ", "))
+	}
+	return nil
 }
 
 // RegisterComponent registers a component in the registry.
 func (r *registry) RegisterComponent(name string, component components.Interface) {
 	r.components.Set(name, component)
+	required, provided := component.Requirements()
+	r.dependencies.provided.Insert(name)
+	for _, p := range provided {
+		r.dependencies.provided.Insert(p)
+	}
+	for _, req := range required {
+		r.dependencies.required.Insert(req)
+	}
 }
 
 // GenerateBase generates the base component.
 func (r *registry) GenerateBase(opts components.Options) error {
+	if err := r.validate(); err != nil {
+		opts.GetLogger().Info("The component registry contains missing dependencies. Will ignore and continue generating base.", "missingDependenciesError", err.Error())
+	}
 	for _, component := range r.components.AllFromFront() {
 		if err := component.GenerateBase(opts); err != nil {
 			return err
@@ -49,6 +85,9 @@ func (r *registry) GenerateBase(opts components.Options) error {
 
 // GenerateLandscape generates the landscape component.
 func (r *registry) GenerateLandscape(opts components.LandscapeOptions) error {
+	if err := r.validate(); err != nil {
+		return err
+	}
 	for _, component := range r.components.AllFromFront() {
 		if err := component.GenerateLandscape(opts); err != nil {
 			return err
@@ -116,5 +155,9 @@ func (r *registry) renderCustomComponents(ocmComponentName, componentDir string,
 func New() Interface {
 	return &registry{
 		components: orderedmap.NewOrderedMap[string, components.Interface](),
+		dependencies: dependencies{
+			provided: set.New[string](),
+			required: set.New[string](),
+		},
 	}
 }

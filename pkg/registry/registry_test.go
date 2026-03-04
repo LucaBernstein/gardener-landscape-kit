@@ -250,6 +250,53 @@ var _ = Describe("Registry", func() {
 			Expect(mockComp1.generateLandscapeCalled).To(BeTrue())
 			Expect(mockComp2.generateLandscapeCalled).To(BeFalse())
 		})
+
+		It("should return an error if a component is included which requires another component not included", func() {
+			expectedErr := errors.New("missing required dependencies: mockComp4")
+			mockComp1 := &mockComponent{
+				name: "mockComp1",
+				generateLandscapeFunc: func(_ components.LandscapeOptions) error {
+					return nil
+				},
+				required: []string{"mockComp4"},
+			}
+			mockComp2 := &mockComponent{
+				name: "mockComp2",
+				generateLandscapeFunc: func(_ components.LandscapeOptions) error {
+					return nil
+				},
+			}
+
+			reg.RegisterComponent(mockComp1.Name(), mockComp1)
+			reg.RegisterComponent(mockComp2.Name(), mockComp2)
+
+			err := reg.GenerateLandscape(landscapeOptions)
+			Expect(err).To(Equal(expectedErr))
+		})
+
+		It("should succeed for fulfilled component requirements", func() {
+			mockComp1 := &mockComponent{
+				name: "mockComp1",
+				generateLandscapeFunc: func(_ components.LandscapeOptions) error {
+					return nil
+				},
+				required: []string{"mockComp2"},
+				provided: []string{"monitoring"},
+			}
+			mockComp2 := &mockComponent{
+				name: "mockComp2",
+				generateLandscapeFunc: func(_ components.LandscapeOptions) error {
+					return nil
+				},
+				required: []string{"mockComp1", "monitoring"},
+			}
+
+			reg.RegisterComponent(mockComp1.Name(), mockComp1)
+			reg.RegisterComponent(mockComp2.Name(), mockComp2)
+
+			err := reg.GenerateLandscape(landscapeOptions)
+			Expect(err).To(BeNil())
+		})
 	})
 
 	Describe("Integration", func() {
@@ -419,6 +466,7 @@ type mockComponent struct {
 	generateLandscapeFunc   func(components.LandscapeOptions) error
 	generateBaseCalled      bool
 	generateLandscapeCalled bool
+	required, provided      []string
 }
 
 func (m *mockComponent) Name() string {
@@ -439,4 +487,8 @@ func (m *mockComponent) GenerateLandscape(opts components.LandscapeOptions) erro
 		return m.generateLandscapeFunc(opts)
 	}
 	return nil
+}
+
+func (m *mockComponent) Requirements() ([]string, []string) {
+	return m.required, m.provided
 }

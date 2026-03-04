@@ -45,6 +45,11 @@ func (*component) Name() string {
 	return "flux"
 }
 
+// Requirements returns the required and provided component dependencies or capabilities.
+func (c *component) Requirements() ([]string, []string) {
+	return nil, nil
+}
+
 // GenerateBase generates the component base directory.
 func (c *component) GenerateBase(_ components.Options) error {
 	return nil

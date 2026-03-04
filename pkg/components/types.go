@@ -55,6 +55,9 @@ type Interface interface {
 	GenerateBase(Options) error
 	// GenerateLandscape generates the component landscape dir.
 	GenerateLandscape(LandscapeOptions) error
+	// Requirements returns the required and provided component dependencies or capabilities.
+	// For the provided list, the name can be omitted.
+	Requirements() ([]string, []string)
 }
 
 type options struct {
