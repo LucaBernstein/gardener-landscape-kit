@@ -41,6 +41,11 @@ func (c *component) Name() string {
 	return "garden"
 }
 
+// Requirements returns the required and provided component dependencies or capabilities.
+func (c *component) Requirements() ([]string, []string) {
+	return nil, nil
+}
+
 // GenerateBase generates the component base directory.
 func (c *component) GenerateBase(options components.Options) error {
 	for _, op := range []func(components.Options) error{
