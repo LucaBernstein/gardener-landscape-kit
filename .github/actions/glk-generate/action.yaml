@@ -1,0 +1,63 @@
+name: GLK Generate
+description: Run gardener-landscape-kit resolve and generate using the container image version from components.yaml
+
+inputs:
+  glk-config:
+    description: Path to the GLK config file (relative to github.workspace)
+    required: false
+    default: glk.yaml
+  base-dir:
+    description: Path to the base directory (relative to github.workspace)
+    required: true
+  landscape-dir:
+    description: Path to the landscape directory (relative to github.workspace)
+    required: true
+  resolve:
+    description: Whether to run the resolve command before generating ("true"/"false")
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - name: Extract GLK version from components.yaml
+      id: glk-version
+      shell: bash
+      run: |
+        set -euo pipefail
+        for dir in "${{ inputs.landscape-dir }}" "${{ inputs.base-dir }}"; do
+          if [ -f "${dir}/components.yaml" ]; then
+            version=$(grep -A1 'name: github.com/gardener/gardener-landscape-kit' "${dir}/components.yaml" | grep 'version:' | awk '{print $2}')
+            if [ -n "$version" ]; then
+              echo "version=${version}" >> "$GITHUB_OUTPUT"
+              echo "GLK version: ${version} (from ${dir}/components.yaml)"
+              exit 0
+            fi
+          fi
+        done
+        echo "::error::Could not determine GLK version from components.yaml in landscape-dir or base-dir"
+        exit 1
+
+    - name: Run GLK resolve and generate
+      shell: bash
+      env:
+        GLK_IMAGE: europe-docker.pkg.dev/gardener-project/snapshots/gardener/gardener-landscape-kit:${{ steps.glk-version.outputs.version }}
+      run: |
+        set -euo pipefail
+        glk() {
+          docker run --rm -v "${{ github.workspace }}:/workspace" -w /workspace "${GLK_IMAGE}" "$@"
+        }
+        if [ "${{ inputs.resolve }}" = "true" ]; then
+          echo "Resolving components.yaml"
+          glk resolve plain \
+            -c "${{ inputs.glk-config }}" \
+            -d "${{ inputs.base-dir }}"
+        fi
+        echo "Generating base dir"
+        glk generate base \
+          -c "${{ inputs.glk-config }}" \
+          "${{ inputs.base-dir }}"
+        echo "Generating landscape dir"
+        glk generate landscape \
+          -c "${{ inputs.glk-config }}" \
+          "${{ inputs.landscape-dir }}"
