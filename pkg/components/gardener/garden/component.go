@@ -78,6 +78,7 @@ func writeLandscapeTemplateFiles(opts components.LandscapeOptions) error {
 	relativeComponentPath := path.Join(components.DirName, ComponentDirectory)
 
 	objects, err := files.RenderTemplateFiles(landscapeTemplates, landscapeTemplateDir, map[string]any{
+		"sourceKind":                  opts.GetSourceKind(),
 		"relativePathToBaseComponent": opts.GetRelativeBaseComponentPath(ComponentDirectory),
 		"landscapeComponentPath":      path.Join(opts.GetRelativeLandscapePath(), relativeComponentPath),
 	})

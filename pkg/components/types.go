@@ -60,6 +60,8 @@ type LandscapeOptions interface {
 	// suitable for kustomize "resources:" entries. componentDir is the
 	// component-specific path beneath DirName (e.g. "gardener/garden").
 	GetRelativeBaseComponentPath(componentDir string) string
+	// GetSourceKind returns the kind of Flux artifact source (GitRepository, OCIRepository).
+	GetSourceKind() configv1alpha1.SourceKind
 }
 
 // Interface is the components interface that each component must implement.
@@ -219,6 +221,11 @@ func (l *landscapeOptions) GetRelativeBasePath() string {
 // This is the landscape directory within the landscape repository.
 func (l *landscapeOptions) GetRelativeLandscapePath() string {
 	return l.landscape.Target
+}
+
+// GetSourceKind returns the kind of Flux artifact source (GitRepository, OCIRepository).
+func (l *landscapeOptions) GetSourceKind() configv1alpha1.SourceKind {
+	return l.landscape.Kind
 }
 
 // GetRelativeBaseComponentPath returns the path from a landscape component

@@ -32,10 +32,10 @@ flux create kustomization flux-system \
 # Some post processing is needed because the flux CLI does not accept template variables everywhere.
 
 ## Replace URL placeholder with Helm template variables
-sed -i 's|https://github.com/<org>/<repo>|{{ .repo_url }}|g' $REPO_ROOT/pkg/components/flux/templates/landscape/flux-system/gotk-sync.yaml
+sed -i 's|https://github.com/<org>/<repo>|{{ .source_url }}|g' $REPO_ROOT/pkg/components/flux/templates/landscape/flux-system/gotk-sync.yaml
 
 ## Replace branch placeholder
-sed -i 's|branch\:\s<branch>|{{ .repo_ref }}|g' $REPO_ROOT/pkg/components/flux/templates/landscape/flux-system/gotk-sync.yaml
+sed -i 's|branch\:\s<branch>|{{ .source_ref }}|g' $REPO_ROOT/pkg/components/flux/templates/landscape/flux-system/gotk-sync.yaml
 
 ## Add comment for recurseSubmodules
 sed -i -e 's/recurseSubmodules: true/recurseSubmodules: true # required if Git submodules are used, e.g. to include the base repo in the landscape repo./g' \

@@ -5,6 +5,7 @@
 package v1alpha1
 
 import (
+	v1 "github.com/fluxcd/source-controller/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -80,6 +81,16 @@ type BaseRepositoryConfig struct {
 	ComponentsFiles []string `json:"componentsFiles,omitempty"`
 }
 
+// SourceKind is the Flux artifact source kind.
+type SourceKind string
+
+var (
+	// KindOCIRepository is the Flux OCIRepository source kind.
+	KindOCIRepository SourceKind = v1.OCIRepositoryKind
+	// KindGitRepository is the Flux GitRepository source kind.
+	KindGitRepository SourceKind = v1.GitRepositoryKind
+)
+
 // LandscapeRepositoryConfig configures the landscape repository.
 type LandscapeRepositoryConfig struct {
 	// URL of the landscape Git repository (http/s or ssh).
@@ -100,6 +111,9 @@ type LandscapeRepositoryConfig struct {
 	// Applied in declared order; later entries win.
 	// +optional
 	ComponentsFiles []string `json:"componentsFiles,omitempty"`
+	// Kind is the Flux artifact source (GitRepository, OCIRepository).
+	// +required
+	Kind SourceKind `json:"kind"`
 }
 
 // OCMConfig contains information about root component.

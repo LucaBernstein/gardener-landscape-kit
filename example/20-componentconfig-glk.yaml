@@ -15,9 +15,11 @@ kind: LandscapeKitConfiguration
 #     - components.yaml
 #     - custom-components.yaml
 #   landscape:
-#     url: https://github.com/<org>/<repo>
+#     kind: OCIRepository # or GitRepository
+#     url: https://github.com/<org>/<repo> # or: oci://<oci-registry-url>/<repo-name>
 #     ref:
-#       branch: <branch-name>
+#       branch: <branch-name> # only for GitRepository
+#       tag: <tag-name>
 #     baseLink: ./base
 #     target: ./
 #     componentsFiles:

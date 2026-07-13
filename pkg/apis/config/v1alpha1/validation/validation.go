@@ -83,15 +83,30 @@ func validateRepositories(repos *configv1alpha1.RepositoriesConfig, fldPath *fie
 	if repos.Landscape != nil {
 		lsPath := fldPath.Child("landscape")
 
+		sourceKind := configv1alpha1.SourceKind(strings.TrimSpace(string(repos.Landscape.Kind)))
+		if sourceKind == "" {
+			allErrs = append(allErrs, field.Required(lsPath.Child("kind"), "kind must be specified"))
+		} else {
+			if sourceKind != configv1alpha1.KindGitRepository && sourceKind != configv1alpha1.KindOCIRepository {
+				allErrs = append(allErrs, field.Invalid(lsPath.Child("kind"), sourceKind, "must be one of 'GitRepository', 'OCIRepository'"))
+			}
+		}
+
 		if strings.TrimSpace(repos.Landscape.URL) == "" {
 			allErrs = append(allErrs, field.Required(lsPath.Child("url"), "url must be specified"))
 		} else {
 			u, err := url.Parse(repos.Landscape.URL)
 			if err != nil {
 				allErrs = append(allErrs, field.Invalid(lsPath.Child("url"), repos.Landscape.URL, "must be a valid URL"))
-			} else if u.Scheme != "https" && u.Scheme != "http" && u.Scheme != "ssh" {
+			} else if sourceKind == configv1alpha1.KindGitRepository && u.Scheme != "https" && u.Scheme != "http" && u.Scheme != "ssh" {
 				allErrs = append(allErrs, field.Invalid(lsPath.Child("url"), repos.Landscape.URL, "must have http(s) or ssh scheme"))
+			} else if sourceKind == configv1alpha1.KindOCIRepository && u.Scheme != "oci" {
+				allErrs = append(allErrs, field.Invalid(lsPath.Child("url"), repos.Landscape.URL, "must have oci scheme"))
 			}
+		}
+
+		if sourceKind == configv1alpha1.KindOCIRepository && repos.Landscape.Ref.Branch != nil && strings.TrimSpace(*repos.Landscape.Ref.Branch) != "" {
+			allErrs = append(allErrs, field.Forbidden(lsPath.Child("ref.branch"), "must not be set for kind "+string(configv1alpha1.KindOCIRepository)))
 		}
 
 		allErrs = append(allErrs, validateGitRepositoryRef(&repos.Landscape.Ref, lsPath.Child("ref"))...)

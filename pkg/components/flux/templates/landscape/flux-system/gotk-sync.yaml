@@ -1,17 +1,23 @@
 ---
 apiVersion: source.toolkit.fluxcd.io/v1
-kind: GitRepository
+kind: {{ .sourceKind }}
 metadata:
   name: flux-system
   namespace: flux-system
 spec:
+  {{- if eq .sourceKind "GitRepository" }}
   interval: 1m0s
   recurseSubmodules: true # required if Git submodules are used, e.g. to include the base repo in the landscape repo.
+  {{- else if eq .sourceKind "OCIRepository" }}
+  provider: generic
+  interval: 5m0s
+  timeout: 60s
+  {{- end }}
   ref:
-    {{ .repo_ref }}
+    {{ .source_ref }}
   secretRef:
     name: flux-system
-  url: {{ .repo_url }}
+  url: {{ .source_url }}
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
@@ -23,5 +29,5 @@ spec:
   path: ./{{ .flux_path }}
   prune: false
   sourceRef:
-    kind: GitRepository
+    kind: {{ .sourceKind }}
     name: flux-system
