@@ -100,6 +100,7 @@ generate_landscape() {
   sed -i "s|<COMMAND>|landscape|g" "$workflows_path/workflow-pr-post-change.yaml"
   sed -i "s|<BASE-PATH>|./base/|g" "$workflows_path/workflow-pr-post-change.yaml"
   sed -i "s|<IMAGE-BASE>|$glk_dev_image_base|g" "$workflows_path/workflow-pr-post-change.yaml"
+  cp "$SCRIPT_DIR/workflow-push-oci.yaml" "$workflows_path"
 
   cd "${GLK_LANDSCAPE_REPO_PATH}"
 

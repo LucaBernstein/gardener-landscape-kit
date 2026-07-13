@@ -39,7 +39,8 @@ var _ = Describe("Validation", func() {
 						Target: "base",
 					},
 					Landscape: &v1alpha1.LandscapeRepositoryConfig{
-						URL: "https://github.com/gardener/gardener-landscape-kit",
+						Kind: v1alpha1.KindGitRepository,
+						URL:  "https://github.com/gardener/gardener-landscape-kit",
 						Ref: v1alpha1.GitRepositoryRef{
 							Branch: new("main"),
 						},
@@ -61,6 +62,7 @@ var _ = Describe("Validation", func() {
 							Target: "base",
 						},
 						Landscape: &v1alpha1.LandscapeRepositoryConfig{
+							Kind:     v1alpha1.KindGitRepository,
 							URL:      "https://github.com/gardener/gardener-landscape-kit",
 							Ref:      v1alpha1.GitRepositoryRef{Branch: new("main")},
 							BaseLink: "base",
@@ -80,6 +82,7 @@ var _ = Describe("Validation", func() {
 							Target: "",
 						},
 						Landscape: &v1alpha1.LandscapeRepositoryConfig{
+							Kind:     v1alpha1.KindGitRepository,
 							URL:      "ftp://github.com/gardener/gardener-landscape-kit",
 							Ref:      v1alpha1.GitRepositoryRef{},
 							BaseLink: "",
@@ -107,6 +110,7 @@ var _ = Describe("Validation", func() {
 						Repositories: &v1alpha1.RepositoriesConfig{
 							Base: &v1alpha1.BaseRepositoryConfig{Target: "base"},
 							Landscape: &v1alpha1.LandscapeRepositoryConfig{
+								Kind:     v1alpha1.KindGitRepository,
 								URL:      url,
 								BaseLink: "base",
 								Target:   "landscape",
@@ -144,12 +148,86 @@ var _ = Describe("Validation", func() {
 				})
 			})
 
+			Context("Landscape Kind", func() {
+				test := func(kind v1alpha1.SourceKind, url string, ref v1alpha1.GitRepositoryRef) field.ErrorList {
+					conf := &v1alpha1.LandscapeKitConfiguration{
+						Repositories: &v1alpha1.RepositoriesConfig{
+							Base: &v1alpha1.BaseRepositoryConfig{Target: "base"},
+							Landscape: &v1alpha1.LandscapeRepositoryConfig{
+								Kind:     kind,
+								URL:      url,
+								Ref:      ref,
+								BaseLink: "base",
+								Target:   "landscape",
+							},
+						},
+					}
+
+					return ValidateLandscapeKitConfiguration(conf)
+				}
+
+				It("should pass with GitRepository and an http(s)/ssh URL", func() {
+					Expect(test(v1alpha1.KindGitRepository, "https://github.com/gardener/gardener-landscape-kit", v1alpha1.GitRepositoryRef{Branch: new("main")})).To(BeEmpty())
+				})
+
+				It("should pass with OCIRepository and an oci URL", func() {
+					Expect(test(v1alpha1.KindOCIRepository, "oci://registry.example.com/landscape", v1alpha1.GitRepositoryRef{Tag: new("v1.0.0")})).To(BeEmpty())
+				})
+
+				It("should fail when kind is not specified", func() {
+					Expect(test("", "https://github.com/gardener/gardener-landscape-kit", v1alpha1.GitRepositoryRef{Branch: new("main")})).To(ConsistOf(
+						PointTo(MatchFields(IgnoreExtras, Fields{
+							"Type":  Equal(field.ErrorTypeRequired),
+							"Field": Equal("repositories.landscape.kind"),
+						})),
+					))
+				})
+
+				It("should fail with an unsupported kind", func() {
+					Expect(test("HelmRepository", "https://github.com/gardener/gardener-landscape-kit", v1alpha1.GitRepositoryRef{Branch: new("main")})).To(ConsistOf(
+						PointTo(MatchFields(IgnoreExtras, Fields{
+							"Type":     Equal(field.ErrorTypeInvalid),
+							"Field":    Equal("repositories.landscape.kind"),
+							"BadValue": Equal(v1alpha1.SourceKind("HelmRepository")),
+						})),
+					))
+				})
+
+				It("should fail with GitRepository and an oci URL", func() {
+					Expect(test(v1alpha1.KindGitRepository, "oci://registry.example.com/landscape", v1alpha1.GitRepositoryRef{Branch: new("main")})).To(ConsistOf(
+						PointTo(MatchFields(IgnoreExtras, Fields{
+							"Type":  Equal(field.ErrorTypeInvalid),
+							"Field": Equal("repositories.landscape.url"),
+						})),
+					))
+				})
+
+				It("should fail with OCIRepository and an http URL", func() {
+					Expect(test(v1alpha1.KindOCIRepository, "https://registry.example.com/landscape", v1alpha1.GitRepositoryRef{Tag: new("v1.0.0")})).To(ConsistOf(
+						PointTo(MatchFields(IgnoreExtras, Fields{
+							"Type":  Equal(field.ErrorTypeInvalid),
+							"Field": Equal("repositories.landscape.url"),
+						})),
+					))
+				})
+
+				It("should fail with OCIRepository and a branch ref", func() {
+					Expect(test(v1alpha1.KindOCIRepository, "oci://registry.example.com/landscape", v1alpha1.GitRepositoryRef{Branch: new("main")})).To(ConsistOf(
+						PointTo(MatchFields(IgnoreExtras, Fields{
+							"Type":  Equal(field.ErrorTypeInvalid),
+							"Field": Equal("repositories.landscape.ref.branch"),
+						})),
+					))
+				})
+			})
+
 			Context("Landscape Reference", func() {
 				test := func(ref v1alpha1.GitRepositoryRef) field.ErrorList {
 					conf := &v1alpha1.LandscapeKitConfiguration{
 						Repositories: &v1alpha1.RepositoriesConfig{
 							Base: &v1alpha1.BaseRepositoryConfig{Target: "base"},
 							Landscape: &v1alpha1.LandscapeRepositoryConfig{
+								Kind:     v1alpha1.KindGitRepository,
 								URL:      "https://github.com/gardener/gardener-landscape-kit",
 								Ref:      ref,
 								BaseLink: "base",
@@ -195,6 +273,7 @@ var _ = Describe("Validation", func() {
 						Repositories: &v1alpha1.RepositoriesConfig{
 							Base: &v1alpha1.BaseRepositoryConfig{Target: baseTarget},
 							Landscape: &v1alpha1.LandscapeRepositoryConfig{
+								Kind:     v1alpha1.KindGitRepository,
 								URL:      "https://github.com/gardener/gardener-landscape-kit",
 								Ref:      v1alpha1.GitRepositoryRef{},
 								BaseLink: baseLink,

@@ -1,0 +1,41 @@
+name: Push OCI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    runs-on: docker
+    permissions:
+      contents: write
+      pull-requests: write
+      statuses: write
+      id-token: write
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v7
+        with:
+          submodules: 'true'
+
+      - name: Install Flux CLI
+        run: |
+          # TODO(LucaBernstein): Replace hardcoded version with information from components.yaml once implemented.
+          FLUX_VERSION="2.8.6"
+          mkdir -p "$HOME/.local/bin"
+          wget -qO- "https://github.com/fluxcd/flux2/releases/download/v${FLUX_VERSION}/flux_${FLUX_VERSION}_linux_amd64.tar.gz" \
+            | tar xz -C "$HOME/.local/bin" flux
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Push artefact to registry
+        run: |
+          STAGE="$HOME/artifact"
+          mkdir -p "$STAGE"
+          cp -a "$GITHUB_WORKSPACE/." "$STAGE/"
+          flux push artifact \
+            oci://glk-registry.local.gardener.cloud:6001/landscape:${{ github.ref_name }} \
+            --insecure-registry \
+            --path="$STAGE" \
+            --source="$(git config --get remote.origin.url)" \
+            --revision="${{ github.ref_name }}@sha1:${{ github.sha }}"
