@@ -25,6 +25,8 @@ spec:
       gardenerAPIServer:
 #       featureGates:
 #         <featureGateName>: true
+#     gardenerScheduler:
+#       strategy: MinimalDistance
       gardenerDashboard:
         enableTokenLogin: true
         logLevel: info
