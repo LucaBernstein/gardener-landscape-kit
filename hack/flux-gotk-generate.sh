@@ -93,3 +93,8 @@ while IFS=$'\t' read -r key repo tag; do
 done < <(GLK_INDEX=$GLK_INDEX yq '.components[env(GLK_INDEX)].resources | to_entries | .[] | .key + "\t" + .value.ociImage.repository + "\t" + .value.ociImage.tag' "$COMPONENTS")
 
 resources_file=$ocm_resources_file yq -i '.resources = load(env(resources_file))' "$OCM_BASE_COMPONENT"
+
+# Sync flux-cli version to GitHub Action definition in dev-setup, replacing whatever version is currently pinned there.
+FLUX_CLI_VERSION=$(yq -e '.components[0].resources.fluxCLI.ociImage.tag' $COMPONENTS)
+WORKFLOW_FILE="$REPO_ROOT/dev-setup/git-repos/workflow-push-oci.yaml"
+sed -i -E "s|(fluxcd/flux2/action@).+|\1$FLUX_CLI_VERSION|g" "$WORKFLOW_FILE"
