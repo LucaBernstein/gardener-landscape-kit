@@ -5,5 +5,5 @@ metadata:
   namespace: garden
 spec:
   ref:
-    tag: {{ .tag }}
+    {{ .ref.kind }}: {{ .ref.value }}
   url: oci://{{ .repository }}

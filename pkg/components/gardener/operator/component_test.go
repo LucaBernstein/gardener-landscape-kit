@@ -130,6 +130,9 @@ var _ = Describe("Component Generation", func() {
 			Entry("with plain component vector without OCM resources",
 				test.NewComponentVectorFactoryBuilder("github.com/gardener/gardener", "v1.2.3").Build(),
 				"testdata/expected-kustomize-plain.yaml"),
+			Entry("with plain component vector without OCM resources with digest instead of tag",
+				test.NewComponentVectorFactoryBuilder("github.com/gardener/gardener", "sha256:c591748673e0b1d734a41300440ab2c32043a916dc3e2e0636c0e1a9dcbf9d41").Build(),
+				"testdata/expected-kustomize-plain-digest.yaml"),
 			Entry("with OCM component vector including helm charts and OCI images",
 				test.NewComponentVectorFactoryBuilder("github.com/gardener/gardener", "v1.2.3").
 					WithImageVectorOverwrite(componentvector.ImageVectorOverwrite{
@@ -168,6 +171,44 @@ operator:
     ref: test.repo/path/gardener/operator:v1.2.3
 `).Build(),
 				"testdata/expected-kustomize-ocm.yaml"),
+			Entry("with OCM component vector including helm charts and OCI images and digest",
+				test.NewComponentVectorFactoryBuilder("github.com/gardener/gardener", "sha256:c591748673e0b1d734a41300440ab2c32043a916dc3e2e0636c0e1a9dcbf9d41").
+					WithImageVectorOverwrite(componentvector.ImageVectorOverwrite{
+						Images: []imagevector.ImageSource{
+							{
+								Name: "component1",
+								Ref:  new("test.repo/path/component1:v1.2.3"),
+							},
+						},
+					}).
+					WithComponentImageVectorOverwrites(componentvector.ComponentImageVectorOverwrites{
+						Components: []componentvector.ComponentImageVectorOverwrite{
+							{
+								Name: "etcd-druid",
+								ImageVectorOverwrite: componentvector.ImageVectorOverwrite{
+									Images: []imagevector.ImageSource{
+										{
+											Name: "component2",
+											Ref:  new("test.repo/path/component2:v1.2.3"),
+										},
+									},
+								},
+							},
+						},
+					}).
+					WithResourcesYAML(`
+operator:
+  helmChart:
+    ref: test.repo/path/charts/gardener/operator@sha256:c591748673e0b1d734a41300440ab2c32043a916dc3e2e0636c0e1a9dcbf9d41
+    imagemap:
+      operator:
+        image:
+          repository: test.repo/path/gardener/operator
+          digest: sha256:c591748673e0b1d734a41300440ab2c32043a916dc3e2e0636c0e1a9dcbf9d41
+  ociImage:
+    ref: test.repo/path/gardener/operator:v1.2.3
+`).Build(),
+				"testdata/expected-kustomize-ocm-digest.yaml"),
 		)
 	})
 })
