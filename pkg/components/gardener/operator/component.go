@@ -8,6 +8,7 @@ import (
 	"embed"
 	"fmt"
 	"path"
+	"strings"
 
 	"github.com/gardener/gardener/pkg/utils"
 
@@ -91,11 +92,11 @@ func getTemplateValues(opts components.Options) (map[string]any, error) {
 		}
 		return map[string]any{
 			"repository": "europe-docker.pkg.dev/gardener-project/releases/charts/gardener/operator",
-			"tag":        gardenerVersion,
+			"ref":        versionRefTemplateValue(gardenerVersion),
 		}, nil
 	}
 
-	repository, tag, err := getHelmChartRepoTagFromComponentVector("operator", cv)
+	repository, version, err := getHelmChartRepoTagFromComponentVector("operator", cv)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get operator Helm chart repository/tag from component vector: %w", err)
 	}
@@ -105,8 +106,19 @@ func getTemplateValues(opts components.Options) (map[string]any, error) {
 		return nil, fmt.Errorf("failed to get template values from component vector: %w", err)
 	}
 	values["repository"] = repository
-	values["tag"] = tag
+	values["ref"] = versionRefTemplateValue(version)
 	return values, nil
+}
+
+func versionRefTemplateValue(version string) map[string]any {
+	refKind := "tag"
+	if strings.HasPrefix(version, "sha256:") {
+		refKind = "digest"
+	}
+	return map[string]any{
+		"kind":  refKind,
+		"value": version,
+	}
 }
 
 func writeLandscapeTemplateFiles(opts components.LandscapeOptions) error {
