@@ -60,24 +60,6 @@ _Appears in:_
 | `Disabled` | DefaultVersionsUpdateStrategyDisabled indicates that the versions in the default vector should not be updated on generate.<br /> |
 
 
-#### GitRepositoryRef
-
-
-
-GitRepositoryRef specifies the Git reference to resolve and checkout.
-
-
-
-_Appears in:_
-- [LandscapeRepositoryConfig](#landscaperepositoryconfig)
-
-| Field | Description | Default | Validation |
-| --- | --- | --- | --- |
-| `branch` _string_ | Branch to check out, defaults to 'main' if no other field is defined. |  | Optional: \{\} <br /> |
-| `tag` _string_ | Tag to check out, takes precedence over Branch. |  | Optional: \{\} <br /> |
-| `commit` _string_ | Commit SHA to check out, takes precedence over all reference fields. |  | Optional: \{\} <br /> |
-
-
 
 
 #### LandscapeRepositoryConfig
@@ -93,8 +75,9 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `url` _string_ | URL of the landscape Git repository (http/s or ssh). |  | Required: \{\} <br /> |
-| `ref` _[GitRepositoryRef](#gitrepositoryref)_ | Ref to check out (branch / tag / commit). |  | Required: \{\} <br /> |
+| `url` _string_ | URL of the landscape source repository (http/s or ssh for Git, oci for OCI). |  | Required: \{\} <br /> |
+| `ref` _[SourceRef](#sourceref)_ | Ref to check out (branch / tag / commit). |  | Required: \{\} <br /> |
+| `kind` _[SourceKind](#sourcekind)_ | Kind is the Flux artifact source (GitRepository, OCIRepository). |  | Required: \{\} <br /> |
 | `baseLink` _string_ | BaseLink is the path inside the landscape repository where the base repository's root is mounted (e.g. via a Git submodule).<br />The base content is located at path.Join(baseLink, repositories.base.target). |  | Required: \{\} <br /> |
 | `target` _string_ | Target is the landscape directory within the landscape repository.<br />Defaults to "./" if not specified. |  | Optional: \{\} <br /> |
 | `componentsFiles` _string array_ | ComponentsFiles lists additional components.yaml files layered on top of the in-repo landscape components.yaml during `generate landscape`.<br />Applied in declared order; later entries win. |  | Optional: \{\} <br /> |
@@ -169,6 +152,37 @@ _Appears in:_
 | --- | --- | --- | --- |
 | `base` _[BaseRepositoryConfig](#baserepositoryconfig)_ | Base configures the base repository. |  | Optional: \{\} <br /> |
 | `landscape` _[LandscapeRepositoryConfig](#landscaperepositoryconfig)_ | Landscape configures the landscape repository. |  | Optional: \{\} <br /> |
+
+
+#### SourceKind
+
+_Underlying type:_ _string_
+
+SourceKind is the Flux artifact source kind.
+
+
+
+_Appears in:_
+- [LandscapeRepositoryConfig](#landscaperepositoryconfig)
+
+
+
+#### SourceRef
+
+
+
+SourceRef specifies the repository reference to resolve and checkout.
+
+
+
+_Appears in:_
+- [LandscapeRepositoryConfig](#landscaperepositoryconfig)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `branch` _string_ | Branch to check out, defaults to 'main' if no other field is defined. |  | Optional: \{\} <br /> |
+| `tag` _string_ | Tag to check out, takes precedence over Branch. |  | Optional: \{\} <br /> |
+| `commit` _string_ | Commit SHA to check out, takes precedence over all reference fields. |  | Optional: \{\} <br /> |
 
 
 #### VersionCheckMode

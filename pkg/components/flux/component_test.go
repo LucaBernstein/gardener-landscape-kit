@@ -175,7 +175,7 @@ var _ = Describe("Flux Component Generation", func() {
 			})
 
 			It("should contain the correct repository URL, path and branch", func() {
-				config.Repositories.Landscape.Ref = v1alpha1.GitRepositoryRef{
+				config.Repositories.Landscape.Ref = v1alpha1.SourceRef{
 					Branch: new("develop"),
 				}
 				opts = buildOpts()
@@ -186,7 +186,7 @@ var _ = Describe("Flux Component Generation", func() {
 			})
 
 			It("should contain the correct repository URL, path and tag", func() {
-				config.Repositories.Landscape.Ref = v1alpha1.GitRepositoryRef{
+				config.Repositories.Landscape.Ref = v1alpha1.SourceRef{
 					Tag: new("v1.0.0"),
 				}
 				opts = buildOpts()
@@ -197,7 +197,7 @@ var _ = Describe("Flux Component Generation", func() {
 			})
 
 			It("should contain the correct repository URL, path and commit", func() {
-				config.Repositories.Landscape.Ref = v1alpha1.GitRepositoryRef{
+				config.Repositories.Landscape.Ref = v1alpha1.SourceRef{
 					Commit: new("a1b2c3d4"),
 				}
 				opts = buildOpts()
@@ -208,7 +208,7 @@ var _ = Describe("Flux Component Generation", func() {
 			})
 
 			It("should contain prefer the branch configuration", func() {
-				config.Repositories.Landscape.Ref = v1alpha1.GitRepositoryRef{
+				config.Repositories.Landscape.Ref = v1alpha1.SourceRef{
 					Branch: new("develop"),
 					Tag:    new("v1.0.0"),
 				}
@@ -220,7 +220,7 @@ var _ = Describe("Flux Component Generation", func() {
 			})
 
 			It("should contain prefer the commit configuration", func() {
-				config.Repositories.Landscape.Ref = v1alpha1.GitRepositoryRef{
+				config.Repositories.Landscape.Ref = v1alpha1.SourceRef{
 					Branch: new("develop"),
 					Tag:    new("v1.0.0"),
 					Commit: new("a1b2c3d4"),
@@ -234,7 +234,7 @@ var _ = Describe("Flux Component Generation", func() {
 
 			It("should generate an OCIRepository source with a tag when kind is OCIRepository", func() {
 				config.Repositories.Landscape.Kind = v1alpha1.KindOCIRepository
-				config.Repositories.Landscape.Ref = v1alpha1.GitRepositoryRef{
+				config.Repositories.Landscape.Ref = v1alpha1.SourceRef{
 					Tag: new("v1.0.0"),
 				}
 				opts = buildOpts()

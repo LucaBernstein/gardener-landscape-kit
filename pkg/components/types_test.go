@@ -275,7 +275,7 @@ var _ = Describe("Types", func() {
 						Base: &v1alpha1.BaseRepositoryConfig{Target: "content"},
 						Landscape: &v1alpha1.LandscapeRepositoryConfig{
 							URL: "https://github.com/example/repo.git",
-							Ref: v1alpha1.GitRepositoryRef{
+							Ref: v1alpha1.SourceRef{
 								Branch: new("main"),
 							},
 							BaseLink: "base",
@@ -362,7 +362,7 @@ var _ = Describe("Types", func() {
 							Base: &v1alpha1.BaseRepositoryConfig{Target: "./"},
 							Landscape: &v1alpha1.LandscapeRepositoryConfig{
 								URL: "https://github.com/example/repo.git",
-								Ref: v1alpha1.GitRepositoryRef{
+								Ref: v1alpha1.SourceRef{
 									Branch: new("main"),
 								},
 								BaseLink: "base",

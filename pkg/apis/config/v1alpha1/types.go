@@ -45,8 +45,8 @@ type ComponentsConfiguration struct {
 	Include []string `json:"include,omitempty"`
 }
 
-// GitRepositoryRef specifies the Git reference to resolve and checkout.
-type GitRepositoryRef struct {
+// SourceRef specifies the repository reference to resolve and checkout.
+type SourceRef struct {
 	// Branch to check out, defaults to 'main' if no other field is defined.
 	// +optional
 	Branch *string `json:"branch,omitempty"`
@@ -93,12 +93,15 @@ var (
 
 // LandscapeRepositoryConfig configures the landscape repository.
 type LandscapeRepositoryConfig struct {
-	// URL of the landscape Git repository (http/s or ssh).
+	// URL of the landscape source repository (http/s or ssh for Git, oci for OCI).
 	// +required
 	URL string `json:"url"`
 	// Ref to check out (branch / tag / commit).
 	// +required
-	Ref GitRepositoryRef `json:"ref"`
+	Ref SourceRef `json:"ref"`
+	// Kind is the Flux artifact source (GitRepository, OCIRepository).
+	// +required
+	Kind SourceKind `json:"kind"`
 	// BaseLink is the path inside the landscape repository where the base repository's root is mounted (e.g. via a Git submodule).
 	// The base content is located at path.Join(baseLink, repositories.base.target).
 	// +required
@@ -111,9 +114,6 @@ type LandscapeRepositoryConfig struct {
 	// Applied in declared order; later entries win.
 	// +optional
 	ComponentsFiles []string `json:"componentsFiles,omitempty"`
-	// Kind is the Flux artifact source (GitRepository, OCIRepository).
-	// +required
-	Kind SourceKind `json:"kind"`
 }
 
 // OCMConfig contains information about root component.

@@ -49,7 +49,7 @@ type LandscapeOptions interface {
 	// GetLandscapeURL returns the URL of the landscape git repository.
 	GetLandscapeURL() string
 	// GetLandscapeRef returns the git reference of the landscape repository.
-	GetLandscapeRef() configv1alpha1.GitRepositoryRef
+	GetLandscapeRef() configv1alpha1.SourceRef
 	// GetRelativeBasePath returns the landscape-side path to the base content, i.e. baseLink joined with base.target.
 	GetRelativeBasePath() string
 	// GetRelativeLandscapePath returns landscape.target — i.e. the
@@ -208,7 +208,7 @@ func (l *landscapeOptions) GetLandscapeURL() string {
 }
 
 // GetLandscapeRef returns the git reference of the landscape repository.
-func (l *landscapeOptions) GetLandscapeRef() configv1alpha1.GitRepositoryRef {
+func (l *landscapeOptions) GetLandscapeRef() configv1alpha1.SourceRef {
 	return l.landscape.Ref
 }
 

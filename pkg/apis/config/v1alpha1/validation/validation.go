@@ -109,7 +109,7 @@ func validateRepositories(repos *configv1alpha1.RepositoriesConfig, fldPath *fie
 			allErrs = append(allErrs, field.Forbidden(lsPath.Child("ref.branch"), "must not be set for kind "+string(configv1alpha1.KindOCIRepository)))
 		}
 
-		allErrs = append(allErrs, validateGitRepositoryRef(&repos.Landscape.Ref, lsPath.Child("ref"))...)
+		allErrs = append(allErrs, validateSourceRef(&repos.Landscape.Ref, lsPath.Child("ref"))...)
 
 		if strings.TrimSpace(repos.Landscape.BaseLink) == "" {
 			allErrs = append(allErrs, field.Required(lsPath.Child("baseLink"), "baseLink must be specified"))
@@ -140,7 +140,7 @@ func validateComponentsFiles(paths []string, fldPath *field.Path) field.ErrorLis
 	return allErrs
 }
 
-func validateGitRepositoryRef(ref *configv1alpha1.GitRepositoryRef, fldPath *field.Path) field.ErrorList {
+func validateSourceRef(ref *configv1alpha1.SourceRef, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	if ref.Branch != nil && strings.TrimSpace(*ref.Branch) == "" {
@@ -153,6 +153,10 @@ func validateGitRepositoryRef(ref *configv1alpha1.GitRepositoryRef, fldPath *fie
 
 	if ref.Commit != nil && strings.TrimSpace(*ref.Commit) == "" {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("commit"), *ref.Commit, "commit SHA must not be empty"))
+	}
+
+	if ref.Branch == nil && ref.Tag == nil && ref.Commit == nil {
+		allErrs = append(allErrs, field.Required(fldPath, "reference must not be empty"))
 	}
 
 	return allErrs
