@@ -24,7 +24,6 @@ set -o pipefail
 # END_HELP
 
 GITHUB_REPO="gardener/gardener-landscape-kit"
-GLK_COMPONENT_NAME="github.com/gardener/gardener-landscape-kit"
 BINARY_NAME="gardener-landscape-kit"
 
 # Defaults
@@ -54,23 +53,55 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# ── detect version from components.yaml ──────────────────────────────────────
+# ── detect version from the component descriptor ──────────────────────────────
 
-[[ -f "$COMPONENTS_FILE" ]] || die "components.yaml not found at '$COMPONENTS_FILE'. Pass --components-file PATH."
+[[ -f "$COMPONENTS_FILE" ]] || die "component descriptor not found at '$COMPONENTS_FILE'. Pass --components-file PATH."
 
-# Extract the version field of the GLK entry.
-# The YAML structure is:
-#   components:
-#   - name: github.com/gardener/gardener-landscape-kit
-#     version: vX.Y.Z
+# Extract the version of the GLK binary from the OCM component descriptor. The
+# descriptor lists the binary as one 'resource' among others (e.g. the bundled
+# flux images), so we must select the resource named '${BINARY_NAME}' rather
+# than the top-level component name — otherwise we'd pick up a flux version.
 #
-# We look for the name line, then grab the next 'version:' line that follows.
-VERSION="$(awk -v component="${GLK_COMPONENT_NAME}" '
-  index($0, "name:") && index($0, component) { found=1; next }
-  found && index($0, "version:") { print; exit }
-' "$COMPONENTS_FILE" | sed 's/.*version:[[:space:]]*["'\'']\{0,1\}\([^"'\'' ]*\)["'\'']\{0,1\}.*/\1/')"
+#   component:
+#     name: github.com/gardener/gardener-landscape-kit
+#     resources:
+#     - name: flux-cli
+#       version: v2.9.2                 # not this
+#     - name: gardener-landscape-kit
+#       version: v0.3.0                 # this
+#
+# Prefer yq for robust parsing; fall back to awk when yq is not installed.
+if command -v yq >/dev/null 2>&1; then
+  VERSION="$(yq -r \
+    ".component.resources[] | select(.name == \"${BINARY_NAME}\" and .type == \"ociImage\" and .relation == \"local\") | .version" \
+    "$COMPONENTS_FILE")"
+  [[ "$VERSION" == "null" ]] && VERSION=""
+else
+  # The descriptor has many resources with the same name (executables, SBOMs,
+  # etc.). Collect each resource block and only emit the version when
+  # type=ociImage and relation=local are both present at the resource field
+  # level (4-space indent) — that uniquely identifies the binary image entry.
+  # Each resource block starts with "  - " (2-space + dash).
+  VERSION="$(awk -v binary="${BINARY_NAME}" '
+    function val(line,    v) {
+      v = line; sub(/^[^:]*:[[:space:]]*/, "", v); gsub(/["'\'']/, "", v)
+      sub(/[[:space:]]+$/, "", v); return v
+    }
+    /^  - / {
+      if (in_block && is_oci && is_local && ver != "") { print ver; exit }
+      in_block=0; ver=""; is_oci=0; is_local=0; matched=0
+    }
+    /^    name:[[:space:]]/ && !matched {
+      if (val($0) == binary) { in_block=1; matched=1 }
+    }
+    in_block && /^    version:[[:space:]]/  { ver = val($0) }
+    in_block && /^    type:[[:space:]]/     { if (val($0) == "ociImage") is_oci=1  }
+    in_block && /^    relation:[[:space:]]/ { if (val($0) == "local")   is_local=1 }
+    END { if (in_block && is_oci && is_local && ver != "") print ver }
+  ' "$COMPONENTS_FILE")"
+fi
 
-[[ -n "$VERSION" ]] || die "Could not find version for '${GLK_COMPONENT_NAME}' in '$COMPONENTS_FILE'."
+[[ -n "$VERSION" ]] || die "Could not find version for resource '${BINARY_NAME}' in '$COMPONENTS_FILE'."
 
 log "Found GLK version: ${VERSION}"
 
