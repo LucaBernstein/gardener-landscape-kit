@@ -42,6 +42,11 @@ on:
         description: 'GLK version to use. Takes precedence over components-file when set.'
         required: false
         type: string
+      post-generate-commands:
+        description: 'Optional bash commands to run after GLK commands but before committing.'
+        required: false
+        type: string
+        default: ''
 
 jobs:
   glk:
@@ -72,6 +77,10 @@ jobs:
         image-tag: ${{ inputs.image-tag }}
         commands: ${{ inputs.glk-commands }}
         image-base: ${{ inputs.image-base }}
+
+    - name: Post-generate commands
+      if: ${{ inputs.post-generate-commands != '' }}
+      run: ${{ inputs.post-generate-commands }}
 
     - name: Commit and push changes
       id: push
