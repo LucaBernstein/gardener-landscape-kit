@@ -52,6 +52,15 @@ on:
         required: false
         type: string
         default: ''
+      oci-auth-username:
+        description: 'OCI registry username for authentication (optional)'
+        required: false
+        type: string
+
+    secrets:
+      oci-auth-password:
+        description: 'OCI registry password for authentication (optional)'
+        required: false
 
 jobs:
   glk:
@@ -86,6 +95,9 @@ jobs:
         image-tag: ${{ inputs.image-tag }}
         commands: ${{ inputs.glk-commands }}
         image-base: ${{ inputs.image-base }}
+      env:
+        GLK_OCI_REG_USERNAME: ${{ inputs.oci-auth-username }}
+        GLK_OCI_REG_PASSWORD: ${{ secrets.oci-auth-password }}
 
     - name: Post-generate commands
       if: ${{ inputs.post-generate-commands != '' }}
