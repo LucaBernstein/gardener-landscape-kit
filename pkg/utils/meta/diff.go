@@ -31,7 +31,7 @@ func newSection(key string, content []byte) *section {
 }
 
 func (s *section) isComment() bool {
-	return len(s.key) > 0 && s.key == string(s.content)
+	return s.key == string(s.content)
 }
 
 // manifestDiff holds the three versions of manifest maps used in three-way merge
