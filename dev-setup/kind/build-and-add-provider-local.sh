@@ -123,9 +123,10 @@ metadata:
   name: provider-local
   namespace: garden
 spec:
-  interval: 30m
   path: components/provider-local
   prune: true
+  interval: 2m
+  timeout: 30s # Necessary to not block reconciliation of the other kustomizations on initial creation, when gardener-operator is not present yet.
   sourceRef:
     kind: ${sourceKind}
     name: flux-system

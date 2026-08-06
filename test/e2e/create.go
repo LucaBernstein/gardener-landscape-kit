@@ -7,6 +7,7 @@ package e2e
 import (
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -100,6 +101,11 @@ var _ = Describe("Create Gardener Landscape", Label("Garden", "default"), Ordere
 		})
 
 		git.submoduleUpdate()
+
+		By("Removing default glk file to force subsequent glk generation to contain diff")
+		modifiedFile := ".glk/defaults/flux/flux-system/.gitignore"
+		Expect(os.WriteFile(path.Join(LandscapePath, modifiedFile), nil, 0600)).To(Succeed())
+		git.add(modifiedFile)
 
 		By("Committing base submodule update")
 		git.add("base")
