@@ -22,6 +22,12 @@ The following dependencies have been updated:\n\
 ```",
   regexManagers: [
     {
+      managerFilePatterns: ['/.github/actions/glk/action.yaml'],
+      matchStrings: ['YQ_VERSION="(?<currentValue>v[^"]+)"'],
+      depNameTemplate: 'mikefarah/yq',
+      datasourceTemplate: 'github-releases',
+    },
+    {
       managerFilePatterns: ['/^componentvector/components\\.yaml$/'],
       matchStrings: [
         // Match default versions in components.yaml, regardless of the order of the fields.

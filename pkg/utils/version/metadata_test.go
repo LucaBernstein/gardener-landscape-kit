@@ -81,7 +81,7 @@ var _ = Describe("Version Metadata", func() {
 			Expect(metadata).To(BeNil())
 			Expect(err).To(MatchError(And(
 				ContainSubstring("older version of gardener-landscape-kit"),
-				ContainSubstring("regenerate the base directory"),
+				ContainSubstring("regenerate the base directory (/test/target)"),
 			)))
 		})
 
