@@ -84,12 +84,8 @@ func validateRepositories(repos *configv1alpha1.RepositoriesConfig, fldPath *fie
 		lsPath := fldPath.Child("landscape")
 
 		sourceKind := configv1alpha1.SourceKind(strings.TrimSpace(string(repos.Landscape.Kind)))
-		if sourceKind == "" {
-			allErrs = append(allErrs, field.Required(lsPath.Child("kind"), "kind must be specified"))
-		} else {
-			if sourceKind != configv1alpha1.KindGitRepository && sourceKind != configv1alpha1.KindOCIRepository {
-				allErrs = append(allErrs, field.Invalid(lsPath.Child("kind"), sourceKind, "must be one of 'GitRepository', 'OCIRepository'"))
-			}
+		if sourceKind != "" && sourceKind != configv1alpha1.KindGitRepository && sourceKind != configv1alpha1.KindOCIRepository {
+			allErrs = append(allErrs, field.NotSupported(lsPath.Child("kind"), sourceKind, []string{string(configv1alpha1.KindGitRepository), string(configv1alpha1.KindOCIRepository)}))
 		}
 
 		if strings.TrimSpace(repos.Landscape.URL) == "" {

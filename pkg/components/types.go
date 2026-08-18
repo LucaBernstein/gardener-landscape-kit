@@ -225,6 +225,9 @@ func (l *landscapeOptions) GetRelativeLandscapePath() string {
 
 // GetSourceKind returns the kind of Flux artifact source (GitRepository, OCIRepository).
 func (l *landscapeOptions) GetSourceKind() configv1alpha1.SourceKind {
+	if l.landscape.Kind == "" {
+		return configv1alpha1.KindGitRepository
+	}
 	return l.landscape.Kind
 }
 

@@ -179,19 +179,14 @@ var _ = Describe("Validation", func() {
 					Expect(test(v1alpha1.KindOCIRepository, "oci://registry.example.com/landscape", v1alpha1.SourceRef{Tag: new("v1.0.0")})).To(BeEmpty())
 				})
 
-				It("should fail when kind is not specified", func() {
-					Expect(test("", "https://github.com/gardener/gardener-landscape-kit", v1alpha1.SourceRef{Branch: new("main")})).To(ConsistOf(
-						PointTo(MatchFields(IgnoreExtras, Fields{
-							"Type":  Equal(field.ErrorTypeRequired),
-							"Field": Equal("repositories.landscape.kind"),
-						})),
-					))
+				It("should succeed when kind is not specified (default GitRepository)", func() {
+					Expect(test("", "https://github.com/gardener/gardener-landscape-kit", v1alpha1.SourceRef{Branch: new("main")})).To(BeEmpty())
 				})
 
 				It("should fail with an unsupported kind", func() {
 					Expect(test("HelmRepository", "https://github.com/gardener/gardener-landscape-kit", v1alpha1.SourceRef{Branch: new("main")})).To(ConsistOf(
 						PointTo(MatchFields(IgnoreExtras, Fields{
-							"Type":     Equal(field.ErrorTypeInvalid),
+							"Type":     Equal(field.ErrorTypeNotSupported),
 							"Field":    Equal("repositories.landscape.kind"),
 							"BadValue": Equal(v1alpha1.SourceKind("HelmRepository")),
 						})),

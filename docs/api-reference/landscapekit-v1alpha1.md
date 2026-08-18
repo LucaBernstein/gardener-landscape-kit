@@ -77,7 +77,7 @@ _Appears in:_
 | --- | --- | --- | --- |
 | `url` _string_ | URL of the landscape source repository (http/s or ssh for Git, oci for OCI). |  | Required: \{\} <br /> |
 | `ref` _[SourceRef](#sourceref)_ | Ref to check out (branch / tag / commit). |  | Required: \{\} <br /> |
-| `kind` _[SourceKind](#sourcekind)_ | Kind is the Flux artifact source (GitRepository, OCIRepository). |  | Required: \{\} <br /> |
+| `kind` _[SourceKind](#sourcekind)_ | Kind is the Flux artifact source (GitRepository, OCIRepository).<br />Defaults to "GitRepository" if not specified. |  | Optional: \{\} <br /> |
 | `baseLink` _string_ | BaseLink is the path inside the landscape repository where the base repository's root is mounted (e.g. via a Git submodule).<br />The base content is located at path.Join(baseLink, repositories.base.target). |  | Required: \{\} <br /> |
 | `target` _string_ | Target is the landscape directory within the landscape repository.<br />Defaults to "./" if not specified. |  | Optional: \{\} <br /> |
 | `componentsFiles` _string array_ | ComponentsFiles lists additional components.yaml files layered on top of the in-repo landscape components.yaml during `generate landscape`.<br />Applied in declared order; later entries win. |  | Optional: \{\} <br /> |

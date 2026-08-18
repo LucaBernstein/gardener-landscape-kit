@@ -100,7 +100,8 @@ type LandscapeRepositoryConfig struct {
 	// +required
 	Ref SourceRef `json:"ref"`
 	// Kind is the Flux artifact source (GitRepository, OCIRepository).
-	// +required
+	// Defaults to "GitRepository" if not specified.
+	// +optional
 	Kind SourceKind `json:"kind"`
 	// BaseLink is the path inside the landscape repository where the base repository's root is mounted (e.g. via a Git submodule).
 	// The base content is located at path.Join(baseLink, repositories.base.target).
