@@ -12,10 +12,13 @@ repositories:
     componentsFiles:
     - components.yaml
   landscape:
-    url: http://gitops:testtest@git.local.gardener.cloud:6080/gitops/test-landscape.git
     ref:
-      branch: main
+      # branch: main
+      tag: main
     baseLink: ./base
+    kind: OCIRepository
+    url: oci://glk-registry.local.gardener.cloud:6001/landscape
+    # url: http://gitops:testtest@git.local.gardener.cloud:6080/gitops/test-landscape.git
 components:
   include:
   - flux

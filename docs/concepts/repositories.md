@@ -1,12 +1,19 @@
 # Repositories
 
 Git repositories are an essential part for landscape and configuration management. In essence, the landscape kit differentiates between two types of repositories:
-- **Base Repository**: This repository contains the core landscape configurations, modules, and shared resources that are common across multiple landscapes.
-- **Landscape Repository**: These repositories are specific to individual landscapes and typically contain overlay configurations that are merged with the ones found in the base repository.
+- **Base Repository**: Contains the core landscape configurations, modules, and shared resources that are common across multiple landscapes.
+- **Landscape Repository**: Specific to individual landscapes; typically contains overlay configurations that are merged with the ones found in the base repository.
 
 Also see the Kustomize [base and overlay documentation](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/#bases-and-overlays) for more information.
 
 Technically, the Gardener Landscape Kit doesn't use Git directly, but prepares and operates on the directory structure of the local filesystem, that can later be checked in and committed via Git by the user.
+
+## Source Kinds
+
+GLK supports two Flux source kinds for the landscape repository:
+
+- **`GitRepository`** (default): The landscape is sourced from a Git repository. This is the standard approach and supports branches, tags, and commit pinning.
+- **`OCIRepository`**: The landscape is sourced from an OCI artifact in a container registry. This is useful for air-gapped environments, when landscape configurations are distributed as versioned OCI images alongside the software they deploy, or when the base and landscape repositories live in different GitHub instances or organizations, where a Git submodule would require cross-instance read access that may not be available.
 
 ## Organization
 
@@ -53,9 +60,10 @@ repositories:
   base:
     target: ./
   landscape:
-    url: https://github.com/gardener-community/test-landscape
+    kind: GitRepository  # or OCIRepository; defaults to GitRepository
+    url: https://github.com/gardener-community/test-landscape  # oci://<registry>/<repo> for OCIRepository
     ref:
-      branch: main
+      branch: main  # branch / tag / commit; for OCIRepository typically a tag
     baseLink: ./base
     target: ./
 ```
@@ -66,7 +74,8 @@ glk generate landscape -c config-file /path/to/landscape-repo
 
 The fields are anchored as follows:
 - `repositories.base.target` is the directory inside the **base** repository that holds the generated base content (the output of `glk generate base`). It is used only by `glk generate base`. **Default:** `./` (the base content lives at the repository root).
-- `repositories.landscape.url` and `repositories.landscape.ref` identify the **landscape** Git repository and the ref to check out.
+- `repositories.landscape.kind` is the Flux source kind: `GitRepository` or `OCIRepository`. **Default:** `GitRepository`.
+- `repositories.landscape.url` and `repositories.landscape.ref` identify the landscape repository and the ref to check out. For `GitRepository`, the URL is an http/s or ssh Git URL; for `OCIRepository`, it is an OCI registry URL (e.g. `oci://registry.example.com/mycompany/landscape`).
 - `repositories.landscape.target` is the directory inside the **landscape** repository that holds the landscape configuration (e.g. `./` when the landscape lives at the repo root, or `./landscapes/first` when multiple landscapes share one repo). **Default:** `./`.
 - `repositories.landscape.baseLink` is the path inside the **landscape** repository where the base repository's **root** is mounted (e.g. the Git submodule mount point, or the in-tree subdirectory holding the base repo). The actual base content is located at `path.Join(baseLink, base.target)`. In a [submodule setup](#separate-repositories-submodule--recommended) this is the submodule mount point itself (e.g. `./base`); in a [monorepo setup](#monorepo) it is the root of the in-tree base directory. `base.target` expresses the in-base-repo subpath, so the two fields are joined to reach the content.
 

@@ -114,6 +114,8 @@ resources:
 - extension.yaml
 EOF
 
+  sourceKind=$(yq .repositories.landscape.kind ${WORK_DIR}/base/landscapekitconfiguration.yaml)
+
   cat <<EOF > "${componentDir}/flux-kustomization.yaml"
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
@@ -121,11 +123,12 @@ metadata:
   name: provider-local
   namespace: garden
 spec:
-  interval: 30m
   path: components/provider-local
   prune: true
+  interval: 2m
+  timeout: 30s # Necessary to not block reconciliation of the other kustomizations on initial creation, when gardener-operator is not present yet.
   sourceRef:
-    kind: GitRepository
+    kind: ${sourceKind}
     name: flux-system
     namespace: flux-system
   dependsOn:

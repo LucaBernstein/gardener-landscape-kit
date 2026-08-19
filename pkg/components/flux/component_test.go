@@ -81,6 +81,7 @@ var _ = Describe("Flux Component Generation", func() {
 		config = &v1alpha1.LandscapeKitConfiguration{
 			Repositories: &v1alpha1.RepositoriesConfig{
 				Landscape: &v1alpha1.LandscapeRepositoryConfig{
+					Kind:   v1alpha1.KindGitRepository,
 					URL:    repoURL,
 					Target: relativeLandscapePath,
 				},
@@ -124,7 +125,7 @@ var _ = Describe("Flux Component Generation", func() {
 		})
 
 		Context("GOTK Sync Manifest", func() {
-			test := func(opts components.LandscapeOptions, refMatcher types.GomegaMatcher) {
+			test := func(opts components.LandscapeOptions, expectedKind string, refMatcher types.GomegaMatcher) {
 				component := NewComponent()
 				Expect(component.GenerateLandscape(opts)).To(Succeed())
 
@@ -146,7 +147,7 @@ var _ = Describe("Flux Component Generation", func() {
 				Expect(objects).To(ConsistOf(
 					PointTo(MatchFields(IgnoreExtras, Fields{
 						"TypeMeta": MatchFields(IgnoreExtras, Fields{
-							"Kind": Equal("GitRepository"),
+							"Kind": Equal(expectedKind),
 						}),
 						"Spec": MatchFields(IgnoreExtras, Fields{
 							"Reference": PointTo(refMatcher),
@@ -159,72 +160,87 @@ var _ = Describe("Flux Component Generation", func() {
 						}),
 						"Spec": MatchFields(IgnoreExtras, Fields{
 							"Path": Equal(relativeLandscapePath + "/flux"),
+							"SourceRef": MatchFields(IgnoreExtras, Fields{
+								"Kind": Equal(expectedKind),
+							}),
 						}),
 					})),
 				))
 			}
 
 			It("should contain the correct repository URL, path and default branch", func() {
-				test(opts, MatchFields(IgnoreExtras, Fields{
+				test(opts, "GitRepository", MatchFields(IgnoreExtras, Fields{
 					"Branch": Equal("main"),
 				}))
 			})
 
 			It("should contain the correct repository URL, path and branch", func() {
-				config.Repositories.Landscape.Ref = v1alpha1.GitRepositoryRef{
+				config.Repositories.Landscape.Ref = v1alpha1.SourceRef{
 					Branch: new("develop"),
 				}
 				opts = buildOpts()
 
-				test(opts, MatchFields(IgnoreExtras, Fields{
+				test(opts, "GitRepository", MatchFields(IgnoreExtras, Fields{
 					"Branch": Equal("develop"),
 				}))
 			})
 
 			It("should contain the correct repository URL, path and tag", func() {
-				config.Repositories.Landscape.Ref = v1alpha1.GitRepositoryRef{
+				config.Repositories.Landscape.Ref = v1alpha1.SourceRef{
 					Tag: new("v1.0.0"),
 				}
 				opts = buildOpts()
 
-				test(opts, MatchFields(IgnoreExtras, Fields{
+				test(opts, "GitRepository", MatchFields(IgnoreExtras, Fields{
 					"Tag": Equal("v1.0.0"),
 				}))
 			})
 
 			It("should contain the correct repository URL, path and commit", func() {
-				config.Repositories.Landscape.Ref = v1alpha1.GitRepositoryRef{
+				config.Repositories.Landscape.Ref = v1alpha1.SourceRef{
 					Commit: new("a1b2c3d4"),
 				}
 				opts = buildOpts()
 
-				test(opts, MatchFields(IgnoreExtras, Fields{
+				test(opts, "GitRepository", MatchFields(IgnoreExtras, Fields{
 					"Commit": Equal("a1b2c3d4"),
 				}))
 			})
 
 			It("should contain prefer the branch configuration", func() {
-				config.Repositories.Landscape.Ref = v1alpha1.GitRepositoryRef{
+				config.Repositories.Landscape.Ref = v1alpha1.SourceRef{
 					Branch: new("develop"),
 					Tag:    new("v1.0.0"),
 				}
 				opts = buildOpts()
 
-				test(opts, MatchFields(IgnoreExtras, Fields{
+				test(opts, "GitRepository", MatchFields(IgnoreExtras, Fields{
 					"Tag": Equal("v1.0.0"),
 				}))
 			})
 
 			It("should contain prefer the commit configuration", func() {
-				config.Repositories.Landscape.Ref = v1alpha1.GitRepositoryRef{
+				config.Repositories.Landscape.Ref = v1alpha1.SourceRef{
 					Branch: new("develop"),
 					Tag:    new("v1.0.0"),
 					Commit: new("a1b2c3d4"),
 				}
 				opts = buildOpts()
 
-				test(opts, MatchFields(IgnoreExtras, Fields{
+				test(opts, "GitRepository", MatchFields(IgnoreExtras, Fields{
 					"Commit": Equal("a1b2c3d4"),
+				}))
+			})
+
+			It("should generate an OCIRepository source with a tag when kind is OCIRepository", func() {
+				config.Repositories.Landscape.Kind = v1alpha1.KindOCIRepository
+				config.Repositories.Landscape.Ref = v1alpha1.SourceRef{
+					Tag: new("v1.0.0"),
+				}
+				opts = buildOpts()
+
+				test(opts, "OCIRepository", MatchFields(IgnoreExtras, Fields{
+					"Tag": Equal("v1.0.0"),
 				}))
 			})
 		})

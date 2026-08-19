@@ -5,7 +5,7 @@ metadata:
   namespace: garden
 spec:
   sourceRef:
-    kind: GitRepository
+    kind: {{ .sourceKind }}
     name: flux-system
     namespace: flux-system
   path: {{ .landscapeComponentPath }}

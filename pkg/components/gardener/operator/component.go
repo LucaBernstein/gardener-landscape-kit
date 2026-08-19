@@ -130,6 +130,7 @@ func writeLandscapeTemplateFiles(opts components.LandscapeOptions) error {
 	}
 
 	values = utils.MergeMaps(values, map[string]any{
+		"sourceKind":                  opts.GetSourceKind(),
 		"relativePathToBaseComponent": opts.GetRelativeBaseComponentPath(ComponentDirectory),
 		"landscapeComponentPath":      path.Join(opts.GetRelativeLandscapePath(), relativeComponentPath),
 	})

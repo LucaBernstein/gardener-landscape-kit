@@ -90,8 +90,9 @@ func writeLandscapeTemplateFiles(opts components.LandscapeOptions) error {
 	}
 
 	values := utils.MergeMaps(cvValues, map[string]any{
-		"repo_url":        opts.GetLandscapeURL(),
-		"repo_ref":        repoRef,
+		"sourceKind":      opts.GetSourceKind(),
+		"source_url":      opts.GetLandscapeURL(),
+		"source_ref":      repoRef,
 		"flux_path":       fluxPath,
 		"components_path": path.Join(opts.GetRelativeLandscapePath(), components.DirName),
 	})

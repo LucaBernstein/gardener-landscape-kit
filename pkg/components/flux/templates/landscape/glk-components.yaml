@@ -8,6 +8,6 @@ spec:
   path: {{ .components_path }}
   prune: true
   sourceRef:
-    kind: GitRepository
+    kind: {{ .sourceKind }}
     name: flux-system
     namespace: flux-system

@@ -49,7 +49,7 @@ type LandscapeOptions interface {
 	// GetLandscapeURL returns the URL of the landscape git repository.
 	GetLandscapeURL() string
 	// GetLandscapeRef returns the git reference of the landscape repository.
-	GetLandscapeRef() configv1alpha1.GitRepositoryRef
+	GetLandscapeRef() configv1alpha1.SourceRef
 	// GetRelativeBasePath returns the landscape-side path to the base content, i.e. baseLink joined with base.target.
 	GetRelativeBasePath() string
 	// GetRelativeLandscapePath returns landscape.target — i.e. the
@@ -60,6 +60,8 @@ type LandscapeOptions interface {
 	// suitable for kustomize "resources:" entries. componentDir is the
 	// component-specific path beneath DirName (e.g. "gardener/garden").
 	GetRelativeBaseComponentPath(componentDir string) string
+	// GetSourceKind returns the kind of Flux artifact source (GitRepository, OCIRepository).
+	GetSourceKind() configv1alpha1.SourceKind
 }
 
 // Interface is the components interface that each component must implement.
@@ -206,7 +208,7 @@ func (l *landscapeOptions) GetLandscapeURL() string {
 }
 
 // GetLandscapeRef returns the git reference of the landscape repository.
-func (l *landscapeOptions) GetLandscapeRef() configv1alpha1.GitRepositoryRef {
+func (l *landscapeOptions) GetLandscapeRef() configv1alpha1.SourceRef {
 	return l.landscape.Ref
 }
 
@@ -219,6 +221,14 @@ func (l *landscapeOptions) GetRelativeBasePath() string {
 // This is the landscape directory within the landscape repository.
 func (l *landscapeOptions) GetRelativeLandscapePath() string {
 	return l.landscape.Target
+}
+
+// GetSourceKind returns the kind of Flux artifact source (GitRepository, OCIRepository).
+func (l *landscapeOptions) GetSourceKind() configv1alpha1.SourceKind {
+	if l.landscape.Kind == "" {
+		return configv1alpha1.KindGitRepository
+	}
+	return l.landscape.Kind
 }
 
 // GetRelativeBaseComponentPath returns the path from a landscape component

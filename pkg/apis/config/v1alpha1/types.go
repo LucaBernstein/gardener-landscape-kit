@@ -5,6 +5,7 @@
 package v1alpha1
 
 import (
+	v1 "github.com/fluxcd/source-controller/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -44,8 +45,8 @@ type ComponentsConfiguration struct {
 	Include []string `json:"include,omitempty"`
 }
 
-// GitRepositoryRef specifies the Git reference to resolve and checkout.
-type GitRepositoryRef struct {
+// SourceRef specifies the repository reference to resolve and checkout.
+type SourceRef struct {
 	// Branch to check out, defaults to 'main' if no other field is defined.
 	// +optional
 	Branch *string `json:"branch,omitempty"`
@@ -80,14 +81,28 @@ type BaseRepositoryConfig struct {
 	ComponentsFiles []string `json:"componentsFiles,omitempty"`
 }
 
+// SourceKind is the Flux artifact source kind.
+type SourceKind string
+
+var (
+	// KindOCIRepository is the Flux OCIRepository source kind.
+	KindOCIRepository SourceKind = v1.OCIRepositoryKind
+	// KindGitRepository is the Flux GitRepository source kind.
+	KindGitRepository SourceKind = v1.GitRepositoryKind
+)
+
 // LandscapeRepositoryConfig configures the landscape repository.
 type LandscapeRepositoryConfig struct {
-	// URL of the landscape Git repository (http/s or ssh).
+	// URL of the landscape source repository (http/s or ssh for Git, oci for OCI).
 	// +required
 	URL string `json:"url"`
 	// Ref to check out (branch / tag / commit).
 	// +required
-	Ref GitRepositoryRef `json:"ref"`
+	Ref SourceRef `json:"ref"`
+	// Kind is the Flux artifact source (GitRepository, OCIRepository).
+	// Defaults to "GitRepository" if not specified.
+	// +optional
+	Kind SourceKind `json:"kind"`
 	// BaseLink is the path inside the landscape repository where the base repository's root is mounted (e.g. via a Git submodule).
 	// The base content is located at path.Join(baseLink, repositories.base.target).
 	// +required

@@ -87,6 +87,8 @@ generate_landscape() {
   yq -i '.components.include += ["github"]' "$GLK_CONFIG_PATH"
   glk generate landscape -c "${GLK_CONFIG_PATH}" "${GLK_LANDSCAPE_REPO_PATH}"
 
+  yq -i 'select(.kind == "OCIRepository") .spec.insecure = true' "${GLK_LANDSCAPE_REPO_PATH}/flux/flux-system/gotk-sync.yaml"
+
   local glk_dev_image=$(cat $SCRIPT_DIR/../glk-dev-image)
   if [ -z "$glk_dev_image" ]; then
     echo "GLK_DEV_IMAGE is empty. Please build a dev version with Skaffold before setting up the repositories."
@@ -100,6 +102,7 @@ generate_landscape() {
   sed -i "s|<COMMAND>|landscape|g" "$workflows_path/workflow-pr-post-change.yaml"
   sed -i "s|<BASE-PATH>|./base/|g" "$workflows_path/workflow-pr-post-change.yaml"
   sed -i "s|<IMAGE-BASE>|$glk_dev_image_base|g" "$workflows_path/workflow-pr-post-change.yaml"
+  cp "$SCRIPT_DIR/workflow-push-oci.yaml" "$workflows_path"
 
   cd "${GLK_LANDSCAPE_REPO_PATH}"
 

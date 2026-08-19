@@ -16,26 +16,36 @@ flux create secret git flux-system \
   --password="<git_token>" \
   --export \
   > $REPO_ROOT/pkg/components/flux/templates/landscape/flux-system/git-sync-secret.yaml
+echo "{{- if eq .sourceKind \"GitRepository\" }}" > $REPO_ROOT/pkg/components/flux/templates/landscape/flux-system/gotk-sync.yaml
 flux create source git flux-system \
-  --branch "<branch>" \
+  --tag "<ref>" \
   --secret-ref flux-system --url "https://github.com/<org>/<repo>" \
   --recurse-submodules \
   --export \
-  > $REPO_ROOT/pkg/components/flux/templates/landscape/flux-system/gotk-sync.yaml
+  >> $REPO_ROOT/pkg/components/flux/templates/landscape/flux-system/gotk-sync.yaml
+echo "{{- else if eq .sourceKind \"OCIRepository\" }}" >> $REPO_ROOT/pkg/components/flux/templates/landscape/flux-system/gotk-sync.yaml
+flux create source oci flux-system \
+  --tag "<ref>" \
+  --secret-ref flux-system --url "https://github.com/<org>/<repo>" \
+  --interval=5m \
+  --export \
+  >> $REPO_ROOT/pkg/components/flux/templates/landscape/flux-system/gotk-sync.yaml
+echo "{{- end }}" >> $REPO_ROOT/pkg/components/flux/templates/landscape/flux-system/gotk-sync.yaml
 flux create kustomization flux-system \
   --interval 10m \
   --path "{{ .flux_path }}" \
   --source GitRepository/flux-system \
   --export \
-  >> $REPO_ROOT/pkg/components/flux/templates/landscape/flux-system/gotk-sync.yaml
+  | sed -e 's|kind: GitRepository|kind: {{ .sourceKind }}|g' \
+  >> $REPO_ROOT/pkg/components/flux/templates/landscape/flux-system/gotk-sync.yaml \
 
 # Some post processing is needed because the flux CLI does not accept template variables everywhere.
 
 ## Replace URL placeholder with Helm template variables
-sed -i 's|https://github.com/<org>/<repo>|{{ .repo_url }}|g' $REPO_ROOT/pkg/components/flux/templates/landscape/flux-system/gotk-sync.yaml
+sed -i 's|https://github.com/<org>/<repo>|{{ .source_url }}|g' $REPO_ROOT/pkg/components/flux/templates/landscape/flux-system/gotk-sync.yaml
 
-## Replace branch placeholder
-sed -i 's|branch\:\s<branch>|{{ .repo_ref }}|g' $REPO_ROOT/pkg/components/flux/templates/landscape/flux-system/gotk-sync.yaml
+## Replace ref placeholder
+sed -i 's|tag\:\s<ref>|{{ .source_ref }}|g' $REPO_ROOT/pkg/components/flux/templates/landscape/flux-system/gotk-sync.yaml
 
 ## Add comment for recurseSubmodules
 sed -i -e 's/recurseSubmodules: true/recurseSubmodules: true # required if Git submodules are used, e.g. to include the base repo in the landscape repo./g' \
@@ -93,3 +103,8 @@ while IFS=$'\t' read -r key repo tag; do
 done < <(GLK_INDEX=$GLK_INDEX yq '.components[env(GLK_INDEX)].resources | to_entries | .[] | .key + "\t" + .value.ociImage.repository + "\t" + .value.ociImage.tag' "$COMPONENTS")
 
 resources_file=$ocm_resources_file yq -i '.resources = load(env(resources_file))' "$OCM_BASE_COMPONENT"
+
+# Sync flux-cli version to GitHub Action definition in dev-setup, replacing whatever version is currently pinned there.
+FLUX_CLI_VERSION=$(yq -e '.components[0].resources.fluxCLI.ociImage.tag' $COMPONENTS)
+WORKFLOW_FILE="$REPO_ROOT/dev-setup/git-repos/workflow-push-oci.yaml"
+sed -i -E "s|(fluxcd/flux2/action@).+|\1$FLUX_CLI_VERSION|g" "$WORKFLOW_FILE"
