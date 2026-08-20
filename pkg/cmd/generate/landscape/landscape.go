@@ -13,10 +13,12 @@ import (
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 
+	"github.com/gardener/gardener-landscape-kit/componentvector"
 	"github.com/gardener/gardener-landscape-kit/pkg/cmd"
 	"github.com/gardener/gardener-landscape-kit/pkg/cmd/generate/options"
 	"github.com/gardener/gardener-landscape-kit/pkg/components"
 	"github.com/gardener/gardener-landscape-kit/pkg/registry"
+	utilscomponentvector "github.com/gardener/gardener-landscape-kit/pkg/utils/componentvector"
 	"github.com/gardener/gardener-landscape-kit/pkg/utils/kustomization"
 	"github.com/gardener/gardener-landscape-kit/pkg/utils/version"
 )
@@ -84,22 +86,33 @@ func validate(opts *options.Options) error {
 }
 
 func run(_ context.Context, opts *options.Options) error {
-	componentOpts, err := components.NewLandscapeOptions(opts, afero.Afero{Fs: afero.NewOsFs()})
+	fs := afero.Afero{Fs: afero.NewOsFs()}
+	componentOpts, err := components.NewLandscapeOptions(opts, fs)
 	if err != nil {
 		return fmt.Errorf("failed to create component options: %w", err)
 	}
 
-	if err := version.CheckGLKComponentVersion(componentOpts.GetComponentVector(), opts.Config, opts.Log); err != nil {
-		return fmt.Errorf("version validation failed: %w", err)
+	currentComponentVector, err := utilscomponentvector.ReadComponentVectorMetadata(opts.TargetDirPath, fs)
+	if err != nil {
+		return fmt.Errorf("failed to read current component vector metadata: %w", err)
 	}
 
-	reg := registry.New()
-	if err := registry.RegisterAllComponents(reg, opts.Config); err != nil {
+	reg := registry.New(currentComponentVector, componentOpts.GetComponentVector())
+	if err := registry.RegisterAllComponents(opts.Log, reg, opts.Config); err != nil {
 		return fmt.Errorf("failed to register components: %w", err)
+	}
+
+	componentVersion, _ := componentOpts.GetComponentVector().FindComponentVersion(componentvector.NameGardenerGardenerLandscapeKit)
+	if err := version.CheckGLKComponentVersion(componentVersion, opts.Config, opts.Log); err != nil {
+		return fmt.Errorf("version validation failed: %w", err)
 	}
 
 	if err := reg.GenerateLandscape(componentOpts); err != nil {
 		return fmt.Errorf("failed to generate landscape components: %w", err)
+	}
+
+	if err := utilscomponentvector.WriteComponentVectorMetadata(componentOpts.GetComponentVector(), componentOpts.GetTargetPath(), fs); err != nil {
+		return fmt.Errorf("failed to write component vector metadata: %w", err)
 	}
 
 	return kustomization.WriteLandscapeComponentsKustomizations(componentOpts)

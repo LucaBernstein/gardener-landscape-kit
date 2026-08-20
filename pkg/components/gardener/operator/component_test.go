@@ -28,6 +28,7 @@ var _ = Describe("Component Generation", func() {
 		fs           afero.Afero
 		cmdOpts      *cmd.Options
 		generateOpts *generateoptions.Options
+		component    components.Interface
 	)
 
 	BeforeEach(func() {
@@ -40,6 +41,10 @@ var _ = Describe("Component Generation", func() {
 			Config:        &v1alpha1.LandscapeKitConfiguration{},
 		}
 		v1alpha1.SetObjectDefaults_LandscapeKitConfiguration(generateOpts.Config)
+
+		var err error
+		component, err = NewComponent()
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	Describe("#GenerateBase", func() {
@@ -52,8 +57,9 @@ var _ = Describe("Component Generation", func() {
 		})
 
 		It("should generate the component base", func() {
-			component := NewComponent()
-			Expect(component.GenerateBase(opts)).To(Succeed())
+			component, err := NewComponent()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(component.GenerateBase(components.NewContext(), opts)).To(Succeed())
 
 			for _, file := range []string{
 				"/repo/baseDir/.glk/defaults/components/gardener/operator/oci-repository.yaml",
@@ -98,10 +104,9 @@ var _ = Describe("Component Generation", func() {
 		})
 
 		It("should generate only the flux kustomization into the landscape dir", func() {
-			component := NewComponent()
 			landscapeOpts, err := components.NewLandscapeOptions(generateOpts, fs)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(component.GenerateLandscape(landscapeOpts)).To(Succeed())
+			Expect(component.GenerateLandscape(components.NewContext(), landscapeOpts)).To(Succeed())
 
 			exists, err := fs.DirExists("/repo/baseDir")
 			Expect(err).ToNot(HaveOccurred())
@@ -118,7 +123,6 @@ var _ = Describe("Component Generation", func() {
 
 		DescribeTable("should generate correct kustomized build output",
 			func(build test.BuildComponentVectorFn, expectedFile string) {
-				component := NewComponent()
 				optsFn, err := test.CreateComponentsVectorFile(fs, build)
 				Expect(err).ToNot(HaveOccurred())
 				result, err := test.KustomizeComponent(fs, component, "components/gardener/operator", optsFn)

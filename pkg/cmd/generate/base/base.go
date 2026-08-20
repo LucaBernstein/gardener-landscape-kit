@@ -11,10 +11,12 @@ import (
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 
+	"github.com/gardener/gardener-landscape-kit/componentvector"
 	"github.com/gardener/gardener-landscape-kit/pkg/cmd"
 	"github.com/gardener/gardener-landscape-kit/pkg/cmd/generate/options"
 	"github.com/gardener/gardener-landscape-kit/pkg/components"
 	"github.com/gardener/gardener-landscape-kit/pkg/registry"
+	utilscomponentvector "github.com/gardener/gardener-landscape-kit/pkg/utils/componentvector"
 	"github.com/gardener/gardener-landscape-kit/pkg/utils/version"
 )
 
@@ -48,17 +50,24 @@ func NewCommand(globalOpts *cmd.Options) *cobra.Command {
 }
 
 func run(_ context.Context, opts *options.Options) error {
-	componentOpts, err := components.NewOptions(opts, afero.Afero{Fs: afero.NewOsFs()})
+	fs := afero.Afero{Fs: afero.NewOsFs()}
+	componentOpts, err := components.NewOptions(opts, fs)
 	if err != nil {
 		return fmt.Errorf("failed to create component options: %w", err)
 	}
 
-	reg := registry.New()
-	if err := registry.RegisterAllComponents(reg, opts.Config); err != nil {
+	currentComponentVector, err := utilscomponentvector.ReadComponentVectorMetadata(opts.TargetDirPath, fs)
+	if err != nil {
+		return fmt.Errorf("failed to read current component vector metadata: %w", err)
+	}
+
+	reg := registry.New(currentComponentVector, componentOpts.GetComponentVector())
+	if err := registry.RegisterAllComponents(opts.Log, reg, opts.Config); err != nil {
 		return fmt.Errorf("failed to register components: %w", err)
 	}
 
-	if err := version.CheckGLKComponentVersion(componentOpts.GetComponentVector(), opts.Config, opts.Log); err != nil {
+	componentVersion, _ := componentOpts.GetComponentVector().FindComponentVersion(componentvector.NameGardenerGardenerLandscapeKit)
+	if err := version.CheckGLKComponentVersion(componentVersion, opts.Config, opts.Log); err != nil {
 		return fmt.Errorf("version check failed: %w", err)
 	}
 
@@ -68,11 +77,12 @@ func run(_ context.Context, opts *options.Options) error {
 
 	// Write version metadata after successful generation,
 	// alongside the generated base content (TargetDirPath joined with base.Target).
-	if err := version.WriteVersionMetadata(
-		componentOpts.GetTargetPath(),
-		afero.Afero{Fs: afero.NewOsFs()},
-	); err != nil {
+	if err := version.WriteVersionMetadata(componentOpts.GetTargetPath(), fs); err != nil {
 		return fmt.Errorf("failed to write version metadata: %w", err)
+	}
+
+	if err := utilscomponentvector.WriteComponentVectorMetadata(componentOpts.GetComponentVector(), componentOpts.GetTargetPath(), fs); err != nil {
+		return fmt.Errorf("failed to write component vector metadata: %w", err)
 	}
 
 	return nil

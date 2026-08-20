@@ -5,6 +5,7 @@
 package github
 
 import (
+	_ "embed"
 	"fmt"
 	"io/fs"
 	"path"
@@ -13,12 +14,6 @@ import (
 	"github.com/gardener/gardener-landscape-kit/pkg/components"
 	"github.com/gardener/gardener-landscape-kit/pkg/utils/files"
 )
-
-// ComponentName is the name of the github component.
-const ComponentName = "github"
-
-// dotGitHubDir is the destination directory at the repository root.
-const dotGitHubDir = ".github"
 
 // DisclaimerHeader is prepended to every file written by this component.
 const DisclaimerHeader = `# This file is managed by gardener-landscape-kit (github component) and will be
@@ -31,31 +26,37 @@ const DisclaimerHeader = `# This file is managed by gardener-landscape-kit (gith
 #
 `
 
-type component struct{}
+var (
+	//go:embed meta.yaml
+	metadataYAML []byte
+)
 
-// NewComponent creates a new github component.
-func NewComponent() components.Interface {
-	return &component{}
+type component struct {
+	*components.Metadata
 }
 
-// Name returns the component name.
-func (*component) Name() string {
-	return ComponentName
+// NewComponent creates a new github component.
+func NewComponent() (components.Interface, error) {
+	metadata, err := components.NewMetadata(metadataYAML)
+	if err != nil {
+		return nil, err
+	}
+	return &component{Metadata: metadata}, nil
 }
 
 // GenerateBase materializes the embedded .github/ assets into the repository root during base generation.
-func (*component) GenerateBase(opts components.Options) error {
-	return writeDotGitHub(opts)
+func (c *component) GenerateBase(_ components.Context, opts components.Options) error {
+	return c.writeDotGitHub(opts)
 }
 
 // GenerateLandscape materializes the embedded .github/ assets into the repository root during landscape generation.
-func (*component) GenerateLandscape(opts components.LandscapeOptions) error {
-	return writeDotGitHub(opts)
+func (c *component) GenerateLandscape(_ components.Context, opts components.LandscapeOptions) error {
+	return c.writeDotGitHub(opts)
 }
 
 // writeDotGitHub walks the embedded sources and writes each file directly to the repository root with the disclaimer header prepended, overwriting any existing content.
-func writeDotGitHub(opts components.Options) error {
-	dotGitHubRoot := path.Join(opts.GetRepoRoot(), dotGitHubDir)
+func (c *component) writeDotGitHub(opts components.Options) error {
+	dotGitHubRoot := path.Join(opts.GetRepoRoot(), c.Directory)
 	for _, src := range []struct {
 		fs   fs.FS
 		root string

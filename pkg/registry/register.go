@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/elliotchance/orderedmap/v3"
+	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/gardener/gardener-landscape-kit/pkg/apis/config/v1alpha1"
@@ -38,7 +39,7 @@ import (
 )
 
 // ComponentList contains all available components.
-var ComponentList = []func() components.Interface{
+var ComponentList = []func() (components.Interface, error){
 	flux.NewComponent,
 	githubcomponent.NewComponent,
 	operator.NewComponent,
@@ -63,11 +64,14 @@ var ComponentList = []func() components.Interface{
 }
 
 // RegisterAllComponents registers all available components.
-func RegisterAllComponents(registry Interface, config *v1alpha1.LandscapeKitConfiguration) error {
+func RegisterAllComponents(log logr.Logger, registry Interface, config *v1alpha1.LandscapeKitConfiguration) error {
 	orderedComponents := orderedmap.NewOrderedMap[string, components.Interface]()
 	for _, newComponent := range ComponentList {
-		component := newComponent()
-		orderedComponents.Set(component.Name(), component)
+		component, err := newComponent()
+		if err != nil {
+			return fmt.Errorf("failed to create component: %w", err)
+		}
+		orderedComponents.Set(component.GetComponentMetadata().Name, component)
 	}
 
 	if err := excludeComponents(config, orderedComponents); err != nil {
@@ -79,7 +83,9 @@ func RegisterAllComponents(registry Interface, config *v1alpha1.LandscapeKitConf
 	}
 
 	for _, component := range orderedComponents.AllFromFront() {
-		registry.RegisterComponent(component.Name(), component)
+		if err := registry.RegisterComponent(log, component); err != nil {
+			return fmt.Errorf("failed to register component: %w", err)
+		}
 	}
 
 	return nil
