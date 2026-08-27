@@ -20,6 +20,8 @@ export GIT_SERVER_URL="http://git.local.gardener.cloud:6080"
 
 # Registry
 export REGISTRY_HOSTNAME="glk-registry.local.gardener.cloud"
+export RUNNER_JOB_IMAGE_SOURCE="codeberg.org/oranki/forgejo-runner:3.5.1"
+export RUNNER_JOB_IMAGE_LOCAL="${REGISTRY_HOSTNAME}:6001/forgejo-runner-job:3.5.1"
 
 # Kind Cluster
 export GLK_KIND_CLUSTER_PREFIX=${GLK_KIND_CLUSTER_PREFIX-glk}
