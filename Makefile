@@ -19,6 +19,10 @@ export LD_FLAGS              = $(shell bash $(GARDENER_HACK_DIR)/get-build-ld-fl
 export SKAFFOLD_DEFAULT_REPO = glk-registry.local.gardener.cloud:6001
 export SKAFFOLD_PUSH         = true
 
+# Use a specific Go toolchain version to ensure consistent builds across different environments.
+# renovate: datasource=golang-version depName=go
+export GOTOOLCHAIN := go1.26.7
+
 #########################################
 # Tools                                 #
 #########################################
