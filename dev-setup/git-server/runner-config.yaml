@@ -63,7 +63,7 @@ runner:
   # Like: ["macos-arm64:host", "ubuntu-latest:docker://node:20-bookworm", "ubuntu-22.04:docker://node:20-bookworm"]
   # If it's empty when registering, it will ask for inputting labels.
   # If it's empty when executing the `daemon`, it will use labels in the `.runner` file.
-  labels: ["d","docker:docker://codeberg.org/oranki/forgejo-runner:3.5.1"]
+  labels: ["d","docker:docker://glk-registry.local.gardener.cloud:6001/forgejo-runner-job:3.5.1"]
 
 cache:
   #
