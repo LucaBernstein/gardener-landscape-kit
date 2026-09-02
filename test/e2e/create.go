@@ -292,10 +292,7 @@ data: {}
 		case v1alpha1.KindOCIRepository:
 			src := &sourcev1.OCIRepository{}
 			Expect(runtimeClusterClient.Client().Get(ctx, sourceKey, src)).To(Succeed())
-			if src.Annotations == nil {
-				src.Annotations = make(map[string]string)
-			}
-			src.Annotations[fluxmeta.ReconcileRequestAnnotation] = requestedAt
+			metav1.SetMetaDataAnnotation(&src.ObjectMeta, fluxmeta.ReconcileRequestAnnotation, requestedAt)
 			Expect(runtimeClusterClient.Client().Update(ctx, src)).To(Succeed())
 
 			By("Waiting for OCIRepository to acknowledge reconciliation")
@@ -306,10 +303,7 @@ data: {}
 		default:
 			src := &sourcev1.GitRepository{}
 			Expect(runtimeClusterClient.Client().Get(ctx, sourceKey, src)).To(Succeed())
-			if src.Annotations == nil {
-				src.Annotations = make(map[string]string)
-			}
-			src.Annotations[fluxmeta.ReconcileRequestAnnotation] = requestedAt
+			metav1.SetMetaDataAnnotation(&src.ObjectMeta, fluxmeta.ReconcileRequestAnnotation, requestedAt)
 			Expect(runtimeClusterClient.Client().Update(ctx, src)).To(Succeed())
 
 			By("Waiting for GitRepository to acknowledge reconciliation")
