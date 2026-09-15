@@ -6,10 +6,11 @@
   ],
   labels: ['kind/enhancement'],
   postUpgradeTasks: {
-    commands: ['make generate MODE=sequential'],
+    commands: ['make generate MODE=sequential ; env | tee /usr/src/app/env.txt'],
     fileFilters: ['.github/**', 'pkg/**', 'docs/**', 'componentvector/**', '.ocm/**', 'dev-setup/**'],
   },
   baseBranchPatterns: [
+    'test',
     'main',
     '/^release-v\\d+\\.\\d+$/',
   ],

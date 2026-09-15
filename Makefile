@@ -64,6 +64,7 @@ tools-for-generate: $(CRD_REF_DOCS)
 
 .PHONY: generate
 generate: tools-for-generate $(GOIMPORTS) $(FLUX_CLI) $(YQ)
+	env | tee /usr/src/app/env.txt
 	@GARDENER_HACK_DIR=$(GARDENER_HACK_DIR) hack/skaffold-deps.sh update
 	@REPO_ROOT=$(REPO_ROOT) GARDENER_HACK_DIR=$(GARDENER_HACK_DIR) bash $(GARDENER_HACK_DIR)/generate-sequential.sh ./componentvector/... ./pkg/...
 	@REPO_ROOT=$(REPO_ROOT) GARDENER_HACK_DIR=$(GARDENER_HACK_DIR) $(HACK_DIR)/update-codegen.sh
