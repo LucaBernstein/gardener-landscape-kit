@@ -63,6 +63,7 @@ The following dependencies have been updated:\n\
     {
       groupName: 'gardener/gardener',
       matchPackageNames: ['/^(github\\.com\\/)?gardener\\/gardener(\\/.*)?$/'],
+      separateMultipleMinor: true,
       enabled: true
     },
     {
@@ -90,6 +91,11 @@ The following dependencies have been updated:\n\
       matchDatasources: ['go'],
       groupName: "fluxcd-controllers",
       matchPackageNames: ['/^github\\.com/fluxcd/[^/]+-controller(/.*)?$/'],
+    },
+    {
+      matchDatasources: ['docker'],
+      matchPackageNames: ['ghcr.io/fluxcd/flux-cli'],
+      separateMultipleMinor: true,
     },
     {
       // Flux controller OCI images are managed by hack/flux-gotk-generate.sh.
