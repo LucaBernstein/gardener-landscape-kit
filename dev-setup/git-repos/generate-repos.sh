@@ -69,7 +69,7 @@ generate_base() {
 
   # Secrets configuration in the reusable workflow is not supported by Forgejo, see https://codeberg.org/forgejo/forgejo/issues/6069.
   yq -i 'del(.on.workflow_call.secrets)' "${GLK_BASE_REPO_PATH}/.github/workflows/glk.yaml"
-  yq -i 'del(.components.include[] | select(. == "github"))' "$GLK_CONFIG_PATH"
+  yq -i 'del(.components[] | select(.name == "github"))' "$GLK_CONFIG_PATH"
 
   cd "${GLK_BASE_REPO_PATH}"
   git add .
@@ -84,7 +84,7 @@ checkout_landscape_repo() {
 
 generate_landscape() {
   echo "🌱 Generating test landscape"
-  yq -i '.components.include += ["github"]' "$GLK_CONFIG_PATH"
+  yq -i '.components += [{"name": "github"}]' "$GLK_CONFIG_PATH"
   glk generate landscape -c "${GLK_CONFIG_PATH}" "${GLK_LANDSCAPE_REPO_PATH}"
 
   yq -i 'select(.kind == "OCIRepository") .spec.insecure = true' "${GLK_LANDSCAPE_REPO_PATH}/flux/flux-system/gotk-sync.yaml"
@@ -108,7 +108,7 @@ generate_landscape() {
 
   # Secrets configuration in the reusable workflow is not supported by Forgejo, see https://codeberg.org/forgejo/forgejo/issues/6069.
   yq -i 'del(.on.workflow_call.secrets)' "${GLK_LANDSCAPE_REPO_PATH}/.github/workflows/glk.yaml"
-  yq -i 'del(.components.include[] | select(. == "github"))' "$GLK_CONFIG_PATH"
+  yq -i 'del(.components[] | select(.name == "github"))' "$GLK_CONFIG_PATH"
 
   git add .
   git commit -m "Generate test landscape" || echo "No changes to commit"
