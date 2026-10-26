@@ -28,7 +28,7 @@ var configDecoder runtime.Decoder
 func init() {
 	configScheme := runtime.NewScheme()
 	utilruntime.Must(configv1alpha1.AddToScheme(configScheme))
-	configDecoder = serializer.NewCodecFactory(configScheme).UniversalDecoder()
+	configDecoder = serializer.NewCodecFactory(configScheme, serializer.EnableStrict).UniversalDecoder()
 }
 
 // Options contains options for the resolve ocm subcommand.
