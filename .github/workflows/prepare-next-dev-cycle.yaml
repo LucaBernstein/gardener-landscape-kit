@@ -14,7 +14,7 @@ permissions:
   contents: read
 
 jobs:
-  prepare:
+  bump-dev-release:
     name: Bump Version and Open PR
     if: ${{ github.repository == 'gardener/gardener-landscape-kit' }}
     runs-on: ubuntu-latest
