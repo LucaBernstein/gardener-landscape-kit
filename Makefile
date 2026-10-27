@@ -93,8 +93,18 @@ check-generate:
 clean:
 	@bash $(GARDENER_HACK_DIR)/clean.sh ./pkg/...
 
+export GOSEC_VERSION = v2.30.0 # This is just relevant for GLK's release branch release-v0.6
+
+# Override gardener's go_tool_copy-based gosec installation with go install to ensure
+# the binary is compiled with the project's Go toolchain and x/tools version, which is
+# required because gosec's bundled x/tools in gardener/hack/tools v1.151.1 predates Go 1.27.
+$(GOSEC): $(call tool_version_file,$(GOSEC),$(GOSEC_VERSION))
+	GOBIN=$(abspath $(TOOLS_BIN_DIR)) GOWORK=off go install github.com/securego/gosec/v2/cmd/gosec@$(GOSEC_VERSION)
+	@touch $(call tool_version_file,$(GOSEC),$(GOSEC_VERSION))
+
 .PHONY: sast
 sast: $(GOSEC)
+	@[ "$$(go version $(GOSEC) | awk '{print $$2}')" = "$(GOTOOLCHAIN)" ] || { rm -f $(GOSEC); $(MAKE) $(GOSEC); } # TODO(LucaBernstein): Remove this force-rebuild of gosec once g/g includes the Go version a tool was built with in the version file.
 	@HACK_DIR=$(HACK_DIR) GARDENER_HACK_DIR=$(GARDENER_HACK_DIR) bash $(HACK_DIR)/sast.sh --exclude-dirs hack,dev
 
 .PHONY: sast-report
