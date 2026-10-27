@@ -1,5 +1,5 @@
 # builder
-FROM --platform=$BUILDPLATFORM golang:1.26.8 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.26.10 AS builder
 
 ARG EFFECTIVE_VERSION
 ARG BUILD_DATE
