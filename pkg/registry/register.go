@@ -74,11 +74,7 @@ func RegisterAllComponents(log logr.Logger, registry Interface, config *v1alpha1
 		orderedComponents.Set(component.GetComponentMetadata().Name, component)
 	}
 
-	if err := excludeComponents(config, orderedComponents); err != nil {
-		return err
-	}
-
-	if err := includeComponents(config, orderedComponents); err != nil {
+	if err := selectComponents(config, orderedComponents); err != nil {
 		return err
 	}
 
@@ -91,53 +87,33 @@ func RegisterAllComponents(log logr.Logger, registry Interface, config *v1alpha1
 	return nil
 }
 
-func excludeComponents(config *v1alpha1.LandscapeKitConfiguration, orderedComponents *orderedmap.OrderedMap[string, components.Interface]) error {
-	excludedComponents := sets.New[string]()
-	if config != nil && config.Components != nil {
-		excludedComponents = excludedComponents.Insert(config.Components.Exclude...)
-	}
-	if excludedComponents.Len() == 0 {
+func selectComponents(config *v1alpha1.LandscapeKitConfiguration, orderedComponents *orderedmap.OrderedMap[string, components.Interface]) error {
+	// An omitted or empty `components` list enables no components: only explicitly listed components are registered.
+	if config == nil || len(config.Components) == 0 {
+		for _, name := range slices.Collect(orderedComponents.Keys()) {
+			orderedComponents.Delete(name)
+		}
 		return nil
 	}
 
-	availableComponents := slices.Collect(orderedComponents.Keys())
-	invalidComponentNames := excludedComponents.Difference(sets.New(availableComponents...))
-	if len(invalidComponentNames) > 0 {
-		return fmt.Errorf(
-			"configuration contains invalid component excludes: %s - available component names are: %s",
-			strings.Join(invalidComponentNames.UnsortedList(), ", "),
-			strings.Join(availableComponents, ", "),
-		)
-	}
-
-	for _, excludedComponent := range excludedComponents.UnsortedList() {
-		orderedComponents.Delete(excludedComponent)
-	}
-
-	return nil
-}
-
-func includeComponents(config *v1alpha1.LandscapeKitConfiguration, orderedComponents *orderedmap.OrderedMap[string, components.Interface]) error {
-	includedComponents := sets.New[string]()
-	if config != nil && config.Components != nil {
-		includedComponents = includedComponents.Insert(config.Components.Include...)
-	}
-	if includedComponents.Len() == 0 {
-		return nil
+	// Non-empty -> positive allow-list: validate names, then delete anything not listed.
+	listedComponents := sets.New[string]()
+	for _, comp := range config.Components {
+		listedComponents.Insert(comp.Name)
 	}
 
 	availableComponents := slices.Collect(orderedComponents.Keys())
-	invalidComponentNames := includedComponents.Difference(sets.New(availableComponents...))
+	invalidComponentNames := listedComponents.Difference(sets.New(availableComponents...))
 	if len(invalidComponentNames) > 0 {
 		return fmt.Errorf(
-			"configuration contains invalid component includes: %s - available component names are: %s",
+			"configuration contains invalid component names: %s - available component names are: %s",
 			strings.Join(invalidComponentNames.UnsortedList(), ", "),
 			strings.Join(availableComponents, ", "),
 		)
 	}
 
 	for _, componentName := range availableComponents {
-		if !includedComponents.Has(componentName) {
+		if !listedComponents.Has(componentName) {
 			orderedComponents.Delete(componentName)
 		}
 	}

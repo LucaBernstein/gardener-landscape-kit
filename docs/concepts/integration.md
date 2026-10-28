@@ -202,13 +202,17 @@ The `github` GLK component materializes reusable actions and workflows into the 
 
 It runs as part of both `glk generate base` and `glk generate landscape`, and follows the same path convention as all other GLK components: `glk` is invoked from the repository root, with `paths.base` and `paths.landscape` in the configuration being repo-relative paths.
 
-The `github` component is **included by default**. If you reference the published versions on github.com (or manage your own copies of these files), add `github` to `components.exclude` in your `glk.yaml` to prevent GLK from overwriting them:
+Components are enabled **only** when listed explicitly in `components`; omitting the block (or leaving it empty) enables nothing. To render the `github` component, add it to the list alongside the other components you want:
 
 ```yaml
 components:
-  exclude:
-  - github
+- name: github
+- name: flux
+- name: operator
+# ... list every component you want enabled
 ```
+
+If you reference the published versions on github.com (or manage your own copies of these files), simply omit `github` from the list to prevent GLK from overwriting them.
 
 ### Automation Patterns
 

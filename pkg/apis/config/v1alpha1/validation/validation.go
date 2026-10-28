@@ -28,7 +28,7 @@ func ValidateLandscapeKitConfiguration(conf *configv1alpha1.LandscapeKitConfigur
 		allErrs = append(allErrs, validateRepositories(conf.Repositories, field.NewPath("repositories"))...)
 	}
 
-	if conf.Components != nil {
+	if len(conf.Components) > 0 {
 		allErrs = append(allErrs, validateComponentsConfiguration(conf.Components, field.NewPath("components"))...)
 	}
 
@@ -43,27 +43,19 @@ func ValidateLandscapeKitConfiguration(conf *configv1alpha1.LandscapeKitConfigur
 	return allErrs
 }
 
-func validateComponentsConfiguration(compConf *configv1alpha1.ComponentsConfiguration, fldPath *field.Path) field.ErrorList {
+func validateComponentsConfiguration(compConf []configv1alpha1.ComponentConfiguration, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	if len(compConf.Exclude) > 0 && len(compConf.Include) > 0 {
-		allErrs = append(allErrs, field.Forbidden(fldPath, "only one of 'exclude' or 'include' can be specified"))
-	}
-
 	foundComponents := sets.New[string]()
-	for i, comp := range compConf.Exclude {
-		if foundComponents.Has(comp) {
-			allErrs = append(allErrs, field.Duplicate(fldPath.Child("exclude").Index(i), comp))
+	for i, comp := range compConf {
+		if strings.TrimSpace(comp.Name) == "" {
+			allErrs = append(allErrs, field.Required(fldPath.Index(i).Child("name"), "component name must not be empty"))
+			continue
 		}
-		foundComponents.Insert(comp)
-	}
-
-	foundComponents = sets.New[string]()
-	for i, comp := range compConf.Include {
-		if foundComponents.Has(comp) {
-			allErrs = append(allErrs, field.Duplicate(fldPath.Child("include").Index(i), comp))
+		if foundComponents.Has(comp.Name) {
+			allErrs = append(allErrs, field.Duplicate(fldPath.Index(i).Child("name"), comp.Name))
 		}
-		foundComponents.Insert(comp)
+		foundComponents.Insert(comp.Name)
 	}
 
 	return allErrs

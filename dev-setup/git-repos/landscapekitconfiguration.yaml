@@ -20,6 +20,5 @@ repositories:
     url: oci://glk-registry.local.gardener.cloud:6001/landscape
     # url: http://gitops:testtest@git.local.gardener.cloud:6080/gitops/test-landscape.git
 components:
-  include:
-  - flux
-  - github
+- name: flux
+- name: github

@@ -54,11 +54,17 @@ var _ = Describe("Create Gardener Landscape", Label("Garden", "default"), Ordere
 
 		Expect(yaml.Unmarshal(configBytes, config)).To(Succeed())
 
-		Expect(config.Components).NotTo(BeNil())
-		// activate all components
-		config.Components.Include = nil
-		// deactivate the github component to retain changes
-		config.Components.Exclude = []string{"github"}
+		// Build an enable-only list of all components except github.
+		config.Components = nil
+		for _, newComp := range registry.ComponentList {
+			comp, err := newComp()
+			Expect(err).NotTo(HaveOccurred())
+			name := comp.GetComponentMetadata().Name
+			if name == "github" {
+				continue
+			}
+			config.Components = append(config.Components, v1alpha1.ComponentConfiguration{Name: name})
+		}
 
 		configBytes, err = yaml.Marshal(config)
 		Expect(err).NotTo(HaveOccurred())

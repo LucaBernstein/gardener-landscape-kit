@@ -22,9 +22,10 @@ type LandscapeKitConfiguration struct {
 	// All paths inside each section are relative to that repository's root.
 	// +optional
 	Repositories *RepositoriesConfig `json:"repositories,omitempty"`
-	// Components is the configuration for the components.
+	// Components is the list of components to enable. Only listed components are generated.
+	// If omitted, nil, or an empty list, no components are enabled.
 	// +optional
-	Components *ComponentsConfiguration `json:"components,omitempty"`
+	Components []ComponentConfiguration `json:"components,omitempty"`
 	// VersionConfig is the configuration for versioning.
 	// +optional
 	VersionConfig *VersionConfiguration `json:"versionConfig,omitempty"`
@@ -35,14 +36,10 @@ type LandscapeKitConfiguration struct {
 	MergeMode *MergeMode `json:"mergeMode,omitempty"`
 }
 
-// ComponentsConfiguration contains configuration for components.
-type ComponentsConfiguration struct {
-	// Exclude is a list of component names to exclude.
-	// +optional
-	Exclude []string `json:"exclude,omitempty"`
-	// Include is a list of component names to include.
-	// +optional
-	Include []string `json:"include,omitempty"`
+// ComponentConfiguration contains configuration properties for an enabled component.
+type ComponentConfiguration struct {
+	// Name is the name of the component to enable.
+	Name string `json:"name"`
 }
 
 // SourceRef specifies the repository reference to resolve and checkout.

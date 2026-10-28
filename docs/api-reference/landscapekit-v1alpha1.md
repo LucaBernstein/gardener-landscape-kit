@@ -26,11 +26,11 @@ _Appears in:_
 | `componentsFiles` _string array_ | ComponentsFiles lists additional components.yaml files layered on top of the in-repo base components.yaml.<br />Applied in declared order; later entries win. |  | Optional: \{\} <br /> |
 
 
-#### ComponentsConfiguration
+#### ComponentConfiguration
 
 
 
-ComponentsConfiguration contains configuration for components.
+ComponentConfiguration contains configuration properties for an enabled component.
 
 
 
@@ -39,8 +39,7 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `exclude` _string array_ | Exclude is a list of component names to exclude. |  | Optional: \{\} <br /> |
-| `include` _string array_ | Include is a list of component names to include. |  | Optional: \{\} <br /> |
+| `name` _string_ | Name is the name of the component to enable. |  |  |
 
 
 #### DefaultVersionsUpdateStrategy

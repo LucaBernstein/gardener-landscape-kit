@@ -26,8 +26,7 @@ kind: LandscapeKitConfiguration
 #     - components.yaml
 #     - custom-components.yaml
 # components:
-#   exclude:
-#   - component-name
+# - name: component-name
 # versionConfig:
 #   defaultVersionsUpdateStrategy: ReleaseBranch
 #   checkMode: Strict # or Warning
