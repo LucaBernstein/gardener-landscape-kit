@@ -7,11 +7,14 @@ package components
 import (
 	_ "embed"
 	"fmt"
+	"os"
 	"path"
 	"path/filepath"
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/afero"
+	"k8s.io/apimachinery/pkg/util/validation/field"
+	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/gardener-landscape-kit/componentvector"
 	configv1alpha1 "github.com/gardener/gardener-landscape-kit/pkg/apis/config/v1alpha1"
@@ -21,8 +24,8 @@ import (
 
 // Options is an interface for options passed to components for generating.
 type Options interface {
-	// GetComponentVector returns the component vector.
-	GetComponentVector() utilscomponentvector.Interface
+	// GetComponentsVector returns the component vector based on the given component dir.
+	GetComponentsVector(string) (utilscomponentvector.Interface, error)
 	// GetRepoRoot returns the path on disk to the root of the repository being generated into
 	// (the value the user passed as TARGET_DIR).
 	GetRepoRoot() string
@@ -68,9 +71,17 @@ type options struct {
 	mergeMode       configv1alpha1.MergeMode
 }
 
-// GetComponentVector returns the component vector.
-func (o *options) GetComponentVector() utilscomponentvector.Interface {
-	return o.componentVector
+// GetComponentsVector returns the component vector based on the given component dir.
+func (o *options) GetComponentsVector(relativeComponentDir string) (utilscomponentvector.Interface, error) {
+	if relativeComponentDir != "" {
+		localComponents, err := readLocalComponentsFile(o.filesystem, o.logger, filepath.Join(o.GetTargetPath(), DirName, relativeComponentDir))
+		if err != nil {
+			return nil, err
+		}
+		return utilscomponentvector.MergeAndValidateComponents(o.componentVector, localComponents)
+	}
+
+	return o.componentVector, nil
 }
 
 // GetRepoRoot returns the on-disk path to the root of the repository being generated into.
@@ -164,13 +175,35 @@ func loadComponentVector(opts *generateoptions.Options, fs afero.Afero, sources 
 	return componentVector, nil
 }
 
+func readLocalComponentsFile(fs afero.Afero, log logr.Logger, filePath string) (*utilscomponentvector.Components, error) {
+	localComponentsFilePath := path.Join(filePath, utilscomponentvector.ComponentVectorFilename)
+	customBytes, err := fs.ReadFile(localComponentsFilePath)
+	if err != nil && !os.IsNotExist(err) {
+		return nil, fmt.Errorf("failed to read local components.yaml file: %w", err)
+	}
+	if len(customBytes) == 0 {
+		return nil, nil
+	}
+
+	obj := &utilscomponentvector.Components{}
+	if err := yaml.Unmarshal(customBytes, obj); err != nil {
+		return nil, fmt.Errorf("failed to parse local components.yaml file: %w", err)
+	}
+	if errList := utilscomponentvector.ValidateComponents(obj, false, field.NewPath("")); len(errList) > 0 {
+		return nil, fmt.Errorf("invalid local components.yaml file %q: %w", localComponentsFilePath, errList.ToAggregate())
+	}
+
+	log.Info("Found local component vector override file", "file", localComponentsFilePath)
+	return obj, nil
+}
+
 func readComponentsFile(opts *generateoptions.Options, fs afero.Afero, src overrideSource) ([]byte, error) {
 	customBytes, err := fs.ReadFile(src.path)
-	if err == nil {
-		opts.Log.Info("Found custom component vector override file", "file", src.path)
-		return customBytes, nil
+	if err != nil {
+		return nil, fmt.Errorf("failed to read component vector override file: %w", err)
 	}
-	return nil, fmt.Errorf("failed to read component vector override file: %w", err)
+	opts.Log.Info("Found custom component vector override file", "file", src.path)
+	return customBytes, nil
 }
 
 type landscapeOptions struct {
@@ -178,13 +211,6 @@ type landscapeOptions struct {
 
 	landscape  *configv1alpha1.LandscapeRepositoryConfig
 	baseTarget string
-	targetPath string
-}
-
-// GetTargetPath overrides Options.GetTargetPath: for landscape generation the
-// content directory is the landscape repository root joined with landscape.target.
-func (l *landscapeOptions) GetTargetPath() string {
-	return l.targetPath
 }
 
 // GetLandscapeURL returns the URL of the landscape git repository.
@@ -253,11 +279,9 @@ func NewLandscapeOptions(opts *generateoptions.Options, fs afero.Afero) (Landsca
 		return nil, err
 	}
 
-	basePath := path.Join(repoRoot, landscape.BaseLink, base.Target)
 	return &landscapeOptions{
-		Options:    newOptions(opts, fs, repoRoot, basePath, componentVector),
+		Options:    newOptions(opts, fs, repoRoot, path.Join(repoRoot, landscape.Target), componentVector),
 		landscape:  landscape,
 		baseTarget: base.Target,
-		targetPath: path.Join(repoRoot, landscape.Target),
 	}, nil
 }

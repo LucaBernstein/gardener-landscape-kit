@@ -33,6 +33,16 @@ type components struct {
 	nameToComponentVector map[string]*ComponentVector
 }
 
+func newComponents(componentObj *Components) *components {
+	result := &components{
+		nameToComponentVector: make(map[string]*ComponentVector, len(componentObj.Components)),
+	}
+	for _, cv := range componentObj.Components {
+		result.nameToComponentVector[cv.Name] = cv
+	}
+	return result
+}
+
 // FindComponentVersion finds the version of the component with the given name.
 func (c *components) FindComponentVersion(name string) (string, bool) {
 	if component, exists := c.nameToComponentVector[name]; exists {
@@ -64,55 +74,59 @@ func NewWithOverride(base []byte, overrides ...[]byte) (Interface, error) {
 	if err := yaml.Unmarshal(base, &baseObj); err != nil {
 		return nil, fmt.Errorf("failed to parse base component vector: %w", err)
 	}
-	if errList := ValidateComponents(&baseObj, field.NewPath("")); len(errList) > 0 {
+	if errList := ValidateComponents(&baseObj, true, field.NewPath("")); len(errList) > 0 {
 		return nil, fmt.Errorf("invalid base component vector: %w", errList.ToAggregate())
 	}
 
-	merged := &baseObj
-	for _, override := range overrides {
-		overrideObj := Components{}
-		if err := yaml.Unmarshal(override, &overrideObj); err != nil {
+	overridesObj := make([]*Components, 0, len(overrides))
+	for _, raw := range overrides {
+		overrideObj := &Components{}
+		if err := yaml.Unmarshal(raw, &overrideObj); err != nil {
 			return nil, fmt.Errorf("failed to parse override component vector: %w", err)
 		}
-		merged = mergeComponents(merged, &overrideObj)
+		overridesObj = append(overridesObj, overrideObj)
+	}
+
+	return MergeAndValidateComponents(newComponents(&baseObj), overridesObj...)
+}
+
+// MergeAndValidateComponents merges the base component vector with the overrides and validates the result.
+func MergeAndValidateComponents(base Interface, overrides ...*Components) (Interface, error) {
+	result, ok := base.(*components)
+	if !ok {
+		return nil, fmt.Errorf("base component vector is not of type *components")
+	}
+	for _, override := range overrides {
+		if override == nil || len(override.Components) == 0 {
+			continue
+		}
+		overrideComponents := newComponents(override)
+		result = mergeComponents(result, overrideComponents)
 	}
 
 	// Validate merged entries (name + version required per entry)
-	for i, cv := range merged.Components {
-		if errList := validateComponentVector(cv, field.NewPath("").Child("components").Index(i)); len(errList) > 0 {
+	for cv := range maps.Values(result.nameToComponentVector) {
+		if errList := validateComponentVector(cv, true, field.NewPath("")); len(errList) > 0 {
 			return nil, fmt.Errorf("invalid merged component vector: %w", errList.ToAggregate())
 		}
 	}
 
-	result := &components{
-		nameToComponentVector: make(map[string]*ComponentVector, len(merged.Components)),
-	}
-	for _, cv := range merged.Components {
-		result.nameToComponentVector[cv.Name] = cv
-	}
 	return result, nil
 }
 
-func mergeComponents(base, override *Components) *Components {
-	nameToOverride := make(map[string]*ComponentVector, len(override.Components))
-	for _, ov := range override.Components {
-		nameToOverride[ov.Name] = ov
+func mergeComponents(base, override *components) *components {
+	merged := make(map[string]*ComponentVector, len(base.nameToComponentVector)+len(override.nameToComponentVector))
+	for name, bc := range base.nameToComponentVector {
+		oc := override.nameToComponentVector[bc.Name]
+		merged[name] = mergeComponentVector(bc, oc)
 	}
-
-	merged := make([]*ComponentVector, 0, len(base.Components)+len(override.Components))
-	seen := make(map[string]struct{}, len(base.Components))
-	for _, bc := range base.Components {
-		oc := nameToOverride[bc.Name]
-		merged = append(merged, mergeComponentVector(bc, oc))
-		seen[bc.Name] = struct{}{}
-	}
-	// Append components from override that were not present in base.
-	for _, ov := range override.Components {
-		if _, exists := seen[ov.Name]; !exists {
-			merged = append(merged, ov)
+	// Add components from override that were not present in base.
+	for name, ov := range override.nameToComponentVector {
+		if _, ok := merged[name]; !ok {
+			merged[name] = ov
 		}
 	}
-	return &Components{Components: merged}
+	return &components{nameToComponentVector: merged}
 }
 
 func mergeImageVectorOverwrite(base, override *ImageVectorOverwrite) *ImageVectorOverwrite {
