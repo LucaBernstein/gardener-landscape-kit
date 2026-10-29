@@ -56,18 +56,13 @@ type RepoAccess struct {
 }
 
 // NewRepoAccess creates a new RepoAccess instance for accessing an OCI repository.
-// The repositoryURL must use the scheme oci:// (HTTPS) or oci+insecure:// (plain HTTP).
+// The repositoryURL must use the scheme oci://.
 func NewRepoAccess(repositoryURL string) (*RepoAccess, error) {
 	parts := strings.SplitN(repositoryURL, "://", 2)
-	if len(parts) != 2 {
-		return nil, fmt.Errorf("invalid repository URL %q, expected format oci://<repository> or oci+insecure://<repository>", repositoryURL)
+	if len(parts) != 2 || parts[0] != "oci" {
+		return nil, fmt.Errorf("invalid repository URL %q, expected format oci://<repository>", repositoryURL)
 	}
-	scheme := parts[0]
-	if scheme != "oci" && scheme != "oci+insecure" {
-		return nil, fmt.Errorf("invalid repository URL %q, unsupported scheme %q (expected oci or oci+insecure)", repositoryURL, scheme)
-	}
-	plainHTTP := scheme == "oci+insecure"
-	resolver, err := urlresolver.New(urlresolver.WithBaseURL(parts[1]), urlresolver.WithPlainHTTP(plainHTTP))
+	resolver, err := urlresolver.New(urlresolver.WithBaseURL(parts[1]))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create URL resolver: %w", err)
 	}

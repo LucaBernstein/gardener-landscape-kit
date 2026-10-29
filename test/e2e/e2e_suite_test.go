@@ -29,7 +29,7 @@ var _ = BeforeSuite(func() {
 	RepoOwner = GitUserName
 
 	RegistryHostname = os.Getenv("REGISTRY_HOSTNAME")
-	RegistryURL = fmt.Sprintf("oci+insecure://%s:6001/glk-e2e-ocm", RegistryHostname)
+	RegistryURL = fmt.Sprintf("oci://%s:6001/glk-e2e-ocm", RegistryHostname)
 })
 
 func TestE2E(t *testing.T) {
