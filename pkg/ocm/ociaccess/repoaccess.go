@@ -18,7 +18,6 @@ import (
 
 	"github.com/go-logr/logr"
 	"k8s.io/component-base/version"
-	"ocm.software/open-component-model/bindings/go/blob"
 	descriptorruntime "ocm.software/open-component-model/bindings/go/descriptor/runtime"
 	descriptorv2 "ocm.software/open-component-model/bindings/go/descriptor/v2"
 	"ocm.software/open-component-model/bindings/go/oci"
@@ -93,19 +92,6 @@ func (r *RepoAccess) AddComponentVersion(ctx context.Context, descriptor *descri
 			descriptor.Component.Name, descriptor.Component.Version, r.RepositoryURL, err)
 	}
 	return nil
-}
-
-// AddLocalResource adds (pushes) a local resource blob for a specific component version to the repository and returns
-// the resource with the access information filled in by the repository.
-func (r *RepoAccess) AddLocalResource(ctx context.Context, component, version string, resource *descriptorruntime.Resource,
-	content blob.ReadOnlyBlob) (*descriptorruntime.Resource, error) {
-	r.logOutput.Reset()
-	res, err := r.repo.AddLocalResource(ctx, component, version, resource, content)
-	if err != nil {
-		return nil, fmt.Errorf("failed to add local resource %s for component version %s:%s to repository %s: %w",
-			resource.Name, component, version, r.RepositoryURL, err)
-	}
-	return res, nil
 }
 
 // GetComponentVersion retrieves the component descriptor for a specific component version from the repository.

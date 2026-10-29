@@ -9,12 +9,10 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/gardener/gardener/pkg/logger"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	descriptorruntime "ocm.software/open-component-model/bindings/go/descriptor/runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/yaml"
 
 	configv1alpha1 "github.com/gardener/gardener-landscape-kit/pkg/apis/config/v1alpha1"
@@ -37,9 +35,6 @@ const (
 var _ = Describe("Resolve OCM components", Label("Garden", "default", "ocm"), func() {
 	It("Should push a synthetic component vector and resolve it via `glk resolve ocm`", func(ctx SpecContext) {
 		log := logf.Log
-		if log.GetSink() == nil {
-			log = logger.MustNewZapLogger(logger.InfoLevel, logger.FormatJSON, zap.WriteTo(GinkgoWriter))
-		}
 
 		By("Seeding synthetic OCM components into the local registry")
 		repo, err := ociaccess.NewRepoAccess(RegistryURL)
@@ -63,7 +58,6 @@ var _ = Describe("Resolve OCM components", Label("Garden", "default", "ocm"), fu
 		landscapeDir := GinkgoT().TempDir()
 		outputDir := GinkgoT().TempDir()
 
-		ignoreMissing := true
 		cfg := &configv1alpha1.LandscapeKitConfiguration{
 			OCM: &configv1alpha1.OCMConfig{
 				Repositories: []string{RegistryURL},
@@ -71,11 +65,11 @@ var _ = Describe("Resolve OCM components", Label("Garden", "default", "ocm"), fu
 					Name:    rootComponentName,
 					Version: syntheticVersion,
 				},
-				IgnoreMissingComponents: &ignoreMissing,
+				IgnoreMissingComponents: new(true),
 			},
 		}
 
-		// Drop a `component-name` marker for every component we expect to appear in components.yaml. Without a
+		// Create a custom component for every component we expect to appear in components.yaml. Without a
 		// marker (and since these names are not in the embedded default vector) GetGLKComponents would skip them.
 		for name, dir := range map[string]string{
 			rootComponentName:  "root",
